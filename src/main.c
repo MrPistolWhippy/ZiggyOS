@@ -122,3 +122,40 @@ void init_fat_filesystem(void) {
 }
 void init_ring1_device_drivers(void) {}
 void jump_to_user_mode(void (user_func)(void)) { (void)user_func; }
+
+// Global Hex Dump Core Engine Layout
+void print_hex_byte(uint8_t b) {
+    const char hex_chars[] = "0123456789ABCDEF";
+    char buf[3] = { hex_chars[(b >> 4) & 0x0F], hex_chars[b & 0x0F], '\0' };
+    print(buf);
+}
+
+void hex_dump(const uint8_t* data, uint32_t size) {
+    for (uint32_t i = 0; i < size; i += 16) {
+        print("0x");
+        print_hex_byte((i >> 8) & 0xFF);
+        print_hex_byte(i & 0xFF);
+        print(": ");
+        for (int j = 0; j < 16; j++) {
+            if (i + j < size) {
+                print_hex_byte(data[i + j]);
+                print(" ");
+            } else {
+                print("   ");
+            }
+        }
+        print(" | ");
+        for (int j = 0; j < 16; j++) {
+            if (i + j < size) {
+                char c = (char)data[i + j];
+                if (c >= 32 && c <= 126) {
+                    char b[2] = { c, '\0' };
+                    print(b);
+                } else {
+                    print(".");
+                }
+            }
+        }
+        print("\n");
+    }
+}
