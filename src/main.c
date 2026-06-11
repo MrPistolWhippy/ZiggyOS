@@ -23,6 +23,29 @@ void print_uptime() {
 	while(i > 0) { print_char(buf[--i]); }
 	print("sn");
 }
+void process_command() {
+	print("n");
+	if (cmd_buffer[0] == 'r' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'b' \&\& cmd_buffer[3] == 'o' \&\& cmd_buffer[4] == 'o' \&\& cmd_buffer[5] == 't') {
+		print("Rebooting...n");
+		outb(0x64, 0xFE);
+	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
+		shell_clear();
+	} else if (cmd_buffer[0] == 'u' \&\& cmd_buffer[1] == 'p' \&\& cmd_buffer[2] == 't' \&\& cmd_buffer[3] == 'i' \&\& cmd_buffer[4] == 'm' \&\& cmd_buffer[5] == 'e') {
+		print_uptime();
+		print("-> ");
+	} else if (cmd_buffer[0] == 'm' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'm') {
+		extern unsigned short mmu_get_base_memory();
+		unsigned int kb = mmu_get_base_memory();
+		print("Conventional RAM: ");
+		char buf[16];
+		int i = 0;
+		while(kb > 0) { buf[i++] = '0' + (kb % 10); kb /= 10; }
+		while(i > 0) { print_char(buf[--i]); }
+		print(" KBn-> ");
+	} else {
+		print("Unknown command.n-> ");
+	}
+}
 void kernel_main() {
 	init_gdt();
 	shell_clear();
