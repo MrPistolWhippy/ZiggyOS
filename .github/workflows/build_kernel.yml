@@ -69,4 +69,6 @@ jobs:
         printf "\tld -m elf_i386 -T linker.ld -o os-kernel.bin \$(OBJS)\n" >> Makefile
         
         # Compile, assemble, and link the final image target cleanly
+        # Inject core architecture source module explicitly
+        gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/app_upgrade_layer.c -o src/app_upgrade_layer.o
         make all
