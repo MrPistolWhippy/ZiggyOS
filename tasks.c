@@ -29,3 +29,27 @@ while (idx > 0) print_char(buf[--idx]);
 print("\n");
 }
 }
+
+char ipc_mailbox[128];
+int ipc_has_message = 0;
+
+void ipc_send(const char* message) {
+int i = 0;
+while (message[i] != '\0' && i < 127) {
+ipc_mailbox[i] = message[i];
+i++;
+}
+ipc_mailbox[i] = '\0';
+ipc_has_message = 1;
+}
+
+void ipc_receive() {
+if (ipc_has_message == 1) {
+print("Mailbox Message: ");
+print(ipc_mailbox);
+print("\n");
+ipc_has_message = 0; // Clear mailbox flag after reading
+} else {
+print("Mailbox Empty.\n");
+}
+}
