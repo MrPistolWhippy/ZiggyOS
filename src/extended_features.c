@@ -15,7 +15,7 @@ typedef struct {
 } FAT_Directory_t;
 
 static FAT_Directory_t fat_table[MAX_FILES];
-static uint8_t virtual_disk[MAX_FILES * BLOCK_SIZE];
+// static uint8_t virtual_disk[MAX_FILES * BLOCK_SIZE];
 
 void init_fat_filesystem(void) {
     print("[FS] Initializing Non-Volatile File Allocation Tables...\n");
