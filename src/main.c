@@ -1,5 +1,6 @@
 #include "io.h"
 unsigned char keyboard_read();
+int keyboard_has_key();
 char scancode_to_ascii(unsigned char scancode);
 void print(const char* str);
 void print_char(char c);
@@ -9,7 +10,7 @@ unsigned long timer_ticks = 0;
 char cmd_buffer[256];
 int cmd_index = 0;
 void print_uptime() {
-	unsigned long seconds = timer_ticks / 100;
+	unsigned long seconds = timer_ticks / 10000;
 	print("System Uptime: ");
 	char buf[16];
 	int i = 0;
@@ -37,20 +38,22 @@ void process_command() {
 }
 void kernel_main() {
 	shell_clear();
-	print("ZiggyOS Upgraded Runtime Environmentn-> ");
+	print("ZiggyOS Async Ticker Shelln-> ");
 	while(1) {
 		timer_ticks++;
-		unsigned char scancode = keyboard_read();
-		char ascii = scancode_to_ascii(scancode);
-		if (ascii != 0) {
-			if (ascii == 'n') {
-				cmd_buffer[cmd_index] = '0';
-				process_command();
-				cmd_index = 0;
-			} else if (ascii == 'b') {
-				if (cmd_index > 0) { cmd_index--; shell_backspace(); }
-			} else {
-				if (cmd_index < 255) { cmd_buffer[cmd_index++] = ascii; print_char(ascii); }
+		if (keyboard_has_key()) {
+			unsigned char scancode = keyboard_read();
+			char ascii = scancode_to_ascii(scancode);
+			if (ascii != 0) {
+				if (ascii == 'n') {
+					cmd_buffer[cmd_index] = '0';
+					process_command();
+					cmd_index = 0;
+				} else if (ascii == 'b') {
+					if (cmd_index > 0) { cmd_index--; shell_backspace(); }
+				} else {
+					if (cmd_index < 255) { cmd_buffer[cmd_index++] = ascii; print_char(ascii); }
+				}
 			}
 		}
 	}

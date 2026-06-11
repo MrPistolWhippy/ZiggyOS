@@ -6,3 +6,7 @@ unsigned char keyboard_read() {
     // Read the scan code from the Data Port (0x60)
     return inb(0x60);
 }
+
+int keyboard_has_key() {
+	return (inb(0x64) \& 1);
+}
