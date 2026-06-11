@@ -133,3 +133,38 @@ play_sound(440); // Standard 440Hz "Concert A" pitch tone
 for(volatile int i = 0; i < 20000000; i++); // Short loop delay interval block
 nosound();
 }
+
+void mmu_hex_dump(void* start_addr) {
+unsigned char* ptr = (unsigned char*)start_addr;
+print("Memory Address | Raw Hex Byte Content Layout\n");
+print("---------------------------------------------\n");
+
+for (int line = 0; line < 4; line++) {
+// Print out the baseline pointer offset address
+unsigned int addr = (unsigned int)ptr;
+char buf[16];
+int idx = 0;
+while (addr > 0) {
+unsigned int rem = addr % 16;
+if (rem < 10) buf[idx++] = '0' + rem;
+else buf[idx++] = 'A' + (rem - 10);
+addr /= 16;
+}
+if(idx == 0) print("00000000");
+while (idx > 0) print_char(buf[--idx]);
+print(" | ");
+
+// Print 16 bytes of hex contents per row line
+for (int byte = 0; byte < 16; byte++) {
+unsigned char val = *ptr;
+unsigned char hi = (val >> 4) & 0x0F;
+unsigned char lo = val & 0x0F;
+
+print_char(hi < 10 ? '0' + hi : 'A' + (hi - 10));
+print_char(lo < 10 ? '0' + lo : 'A' + (lo - 10));
+print_char(' ');
+ptr++;
+}
+print("\n");
+}
+}
