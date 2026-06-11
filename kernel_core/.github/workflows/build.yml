@@ -1,0 +1,40 @@
+name: ZiggyOS Automated ISO Build Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Cross-Compiler Backend and ISO Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib binutils xorriso grub-pc-bin mtools
+
+    - name: Compile OS Kernel Binary
+      run: |
+        make clean
+        make
+
+    - name: Package Bootable ISO Image File
+      run: |
+        mkdir -p isodir/boot/grub
+        cp os-kernel.bin isodir/boot/ 2>/dev/null || cp src/os-kernel.bin isodir/boot/
+        cat << 'GRUB' > isodir/boot/grub/grub.cfg
+        menuentry "ZiggyOS v1.0 (Electric Teal/Emerald Spectrum)" {
+            multiboot /boot/os-kernel.bin
+            boot
+        }
+        GRUB
+        grub-mkrescue -o ziggyos.iso isodir
+
+    - name: Upload Bootable ISO Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ziggyos-boot-image
+        path: ziggyos.iso

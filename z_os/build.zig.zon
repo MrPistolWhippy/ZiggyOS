@@ -1,0 +1,1 @@
+.{.name="ziggyos",.version="1.5.0",.paths=.{"build.zig","main.zig","linker.ld"}}

@@ -1,0 +1,2 @@
+#!/bin/sh
+git push -f https://github.com main

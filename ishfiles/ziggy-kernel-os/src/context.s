@@ -1,0 +1,1 @@
+.syntax unified\n.thumb\n.global switch_context\nswitch_context:\nmrs r0, psp\ntst lr, #0x10\nit eq\nvstmdbeq r0!, {s16-s31}\nstmdb r0!, {r4-r11}\nmsr psp, r0\nbx lr\n

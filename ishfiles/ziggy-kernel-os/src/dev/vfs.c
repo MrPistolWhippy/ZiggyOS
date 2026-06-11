@@ -1,0 +1,1 @@
+char vfs[64][512]; int alloc() { return 0; }

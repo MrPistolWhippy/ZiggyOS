@@ -1,0 +1,1 @@
+#!/bin/sh\narm-none-eabi-gcc -O3 -flto -mcpu=cortex-m4 -mthumb src/*.c src/*.s -o ziggyos.elf\n
