@@ -1,8 +1,6 @@
 #include <stdint.h>
 
-// Missing UART terminal and output drivers
-void uart_putc(char c) { (void)c; }
-char uart_getc_nonblocking(void) { return 0; }
+// Missing display printer stub
 void print(const char* str) { (void)str; }
 
 // Missing system core functions 
