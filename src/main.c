@@ -1,17 +1,12 @@
 #include <stdint.h>
 
 extern void init_global_descriptor_table(void);
-extern void init_flash_page_mapper(void);
-extern void init_video_dma_canvas(void);
-extern void init_interrupt_priorities_sys(void);
-extern int run_automated_tests_sys(void);
-extern void app_radio_telemetry_init(void);
-extern void app_stego_panic_init(void);
-extern void app_stego_trigger_wipe(void);
+extern void jump_to_user_mode(void (*user_func)(void));
 extern void watchdog_kick(void);
 extern void uart_putc(char c);
 extern int uart_getc_nonblocking(char *out_char);
 extern void print(const char *str);
+extern void app_stego_trigger_wipe(void);
 
 static int str_match(const char *s1, const char *s2) {
     while (*s1 && (*s1 == *s2)) { s1++; s2++; }
@@ -20,22 +15,17 @@ static int str_match(const char *s1, const char *s2) {
 
 void execute_shell_command(const char *cmd) {
     if (str_match(cmd, "help")) {
-        print("\nAvailable Commands:\nhelp, status, meminfo, flashwr, lumos, panic\n");
+        print("\nAvailable Rings Commands:\nhelp, status, panic\n");
     } else if (str_match(cmd, "status")) {
-        print("\n[STATUS] Kernel: Active | Power Level: OVER9000\n");
-    } else if (str_match(cmd, "meminfo")) {
-        print("\n[MEMORY] Static Heap Size: 8192 Bytes\n");
-    } else if (str_match(cmd, "flashwr")) {
-        print("\n[FLASH] Written 2048 bytes to 0x08000000\n");
-    } else if (str_match(cmd, "lumos")) {
-        print("\n🌟 LUMOS: ACCENDED VEGETA MICROKERNEL ILLUMINATED 🌟\n");
+        print("\n[STATUS] Privilege Level: Ring 3 (Userland Isolation Mode)\n");
     } else if (str_match(cmd, "panic")) {
         app_stego_trigger_wipe();
     }
 }
+
 void run_userland_shell(void) {
     char rx; char cmd_buf[64]; uint8_t cmd_idx = 0;
-    print("\n--- ZiggyOS Interactive Userland Shell v1.0 ---\nziggy_user@deck:~$ ");
+    print("\n--- ZiggyOS Privilege Ring 3 Shell Active ---\nziggy_user@deck:~$ ");
     while (1) {
         watchdog_kick();
         if (uart_getc_nonblocking(&rx)) {
@@ -52,9 +42,10 @@ void run_userland_shell(void) {
 }
 
 void kernel_main(void) {
-    print("\n==================================================\n[ZIGGYOS] BOOT: ULTIMATE COMMAND MATRIX DEPLOYED\n==================================================\n");
-    init_global_descriptor_table(); init_flash_page_mapper(); init_video_dma_canvas(); init_interrupt_priorities_sys();
-    if (!run_automated_tests_sys()) app_stego_trigger_wipe();
-    app_radio_telemetry_init(); app_stego_panic_init();
-    run_userland_shell();
+    print("\n==================================================\n");
+    print("[ZIGGYOS] BOOT: PREPARING PRIVILEGE RING SEPARATION\n");
+    print("==================================================\n");
+
+    init_global_descriptor_table();
+    jump_to_user_mode(run_userland_shell);
 }
