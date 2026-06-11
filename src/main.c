@@ -72,6 +72,8 @@ void kernel_main(void) {
     init_global_descriptor_table();
     init_syscall_vector_gate();
     init_fat_filesystem();
+    extern void init_flash_persistence_driver(void);
+    init_flash_persistence_driver();
     init_ring1_device_drivers();
     
     jump_to_user_mode(run_userland_shell);
