@@ -36,3 +36,16 @@ unsigned short mmu_get_base_memory() {
 	volatile unsigned short* bios_ptr = (volatile unsigned short*)0x413;
 	return *bios_ptr;
 }
+
+unsigned int heap_start = 0x100000;
+unsigned int heap_current = 0x100000;
+void* malloc(unsigned int size) {
+	unsigned int alloc_address = heap_current;
+	heap_current += size;
+	
+	if (heap_current >= 0x400000) {
+		print("Error: Kernel Heap Out of Memory!n");
+		return 0;
+	}
+	return (void*)alloc_address;
+}
