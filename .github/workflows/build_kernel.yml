@@ -19,11 +19,17 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-multilib build-essential nasm
 
+    - name: Synchronize Local Workspaces
+      run: |
+        # If your source is nested in backup paths, pull it forward
+        if [ -d "ishfiles/ziggy-kernel-os/src" ]; then
+          cp -r ishfiles/ziggy-kernel-os/src/* src/ || true
+          cp ishfiles/ziggy-kernel-os/linker.ld . || true
+        fi
+        touch src/io.h
+
     - name: Clean Previous Builds
       run: make clean || true
 
     - name: Compile and Link Kernel Image Targets
-      run: |
-        # Satisfy the empty header file dependency we added locally
-        touch src/io.h
-        make all
+      run: make all
