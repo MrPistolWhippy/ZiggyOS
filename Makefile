@@ -1,7 +1,6 @@
 CC = gcc
-LD = ld
-CFLAGS = -ffreestanding -Os -Wall -Wextra -ffunction-sections -fdata-sections
-LDFLAGS = -nostdlib --no-warn-rwx-segments --gc-sections -T src/linker.ld
+CFLAGS = -m32 -ffreestanding -Os -Wall -Wextra -ffunction-sections -fdata-sections
+LDFLAGS = -m32 -nostdlib -Xlinker --no-warn-rwx-segments -Xlinker --gc-sections -T src/linker.ld
 
 SRC = $(wildcard src/*.c)
 OBJ = $(SRC:.c=.o)
@@ -10,7 +9,7 @@ TARGET = os-kernel.bin
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ)
+	$(CC) $(LDFLAGS) -o $(TARGET) $(OBJ)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
