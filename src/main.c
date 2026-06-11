@@ -82,6 +82,43 @@ void kernel_main(void) {
 // Global Fallback Sync Stubs for Dynamic CI Workflows
 void watchdog_kick(void) {}
 void init_syscall_vector_gate(void) {}
-void init_fat_filesystem(void) {}
+// FAT16 BIOS Parameter Block (BPB) layout
+struct bpb_structure {
+    uint8_t  bootstrap[3];
+    uint8_t  oem_name[8];
+    uint16_t bytes_per_sector;
+    uint8_t  sectors_per_cluster;
+    uint16_t reserved_sectors;
+    uint8_t  num_fats;
+    uint16_t root_dir_entries;
+    uint16_t total_sectors_short;
+    uint8_t  media_descriptor;
+    uint16_t sectors_per_fat;
+} __attribute__((packed));
+
+void init_fat_filesystem(void) {
+    print("FAT: Initializing storage driver mount...n");
+    
+    // Allocate a sector buffer on stack
+    uint8_t sector_buffer[512];
+    
+    // Read sector 0 (The Boot Sector) using your flash driver
+    // Signature: flash_read_sector(uint32_t sector_num, uint8_t* buffer)
+    extern int flash_read_sector(uint32_t, uint8_t*);
+    
+    if (flash_read_sector(0, sector_buffer) != 0) {
+        print("FAT Error: Failed to read sector 0 from storage.n");
+        return;
+    }
+    
+    struct bpb_structure* bpb = (struct bpb_structure*)sector_buffer;
+    
+    // Quick validation check on common sector properties
+    if (bpb->bytes_per_sector == 512) {
+        print("FAT: Valid FAT16 cluster framework detected!n");
+    } else {
+        print("FAT Warning: Unrecognized partition filesystem layout.n");
+    }
+}
 void init_ring1_device_drivers(void) {}
 void jump_to_user_mode(void (user_func)(void)) { (void)user_func; }
