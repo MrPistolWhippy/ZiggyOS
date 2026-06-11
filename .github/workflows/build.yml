@@ -15,8 +15,17 @@ jobs:
 
       - name: Generate Dynamic Makefile and Build
         run: |
+          # Core System Layers
           gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/main.c -o src/main.o
           gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/mmu.c -o src/mmu.o
           gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/uart_driver.c -o src/uart_driver.o
           gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/vector_table.c -o src/vector_table.o
+          
+          # Application and Fallback Layers
+          gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/app_radio_telemetry.c -o src/app_radio_telemetry.o
+          gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/app_stego_panic.c -o src/app_stego_panic.o
+          gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/app_upgrade_layer.c -o src/app_upgrade_layer.o
+          gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/linker_fallbacks.c -o src/linker_fallbacks.o
+          
+          # Link all compiled components
           ld -m elf_i386 -T src/linker.ld -o os-kernel.bin src/app_radio_telemetry.o src/app_stego_panic.o src/app_upgrade_layer.o src/linker_fallbacks.o src/main.o src/mmu.o src/uart_driver.o src/vector_table.o
