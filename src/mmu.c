@@ -28,3 +28,6 @@ void init_mmu_segments(void) {
 void echo_mmu_status(void) {
     // Standard kernel video matrix trace logic placeholder
 }
+
+// Allocate the master page translation alignment directory memory table
+uint32_t translation_table[4096] __attribute__((aligned(16384)));

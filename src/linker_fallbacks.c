@@ -25,3 +25,11 @@ void HardFault_Handler(void) __attribute__((weak, alias("Default_Handler")));
 void PendSV_Handler(void)    __attribute__((weak, alias("Default_Handler")));
 void SysTick_Handler(void)   __attribute__((weak, alias("Default_Handler")));
 void UART0_Handler(void)     __attribute__((weak, alias("Default_Handler")));
+
+// System-wide string printing utility fallback
+void print(const char *str) {
+    extern void uart_putc(char c);
+    while (*str) {
+        uart_putc(*str++);
+    }
+}
