@@ -1,5 +1,8 @@
 #include <stdint.h>
 
+// Memory Allocation Subsystem Prototype
+void* kmalloc(uint32_t size);
+
 // New Graphic and Task System Declarations
 void set_text_color(uint8_t fg, uint8_t bg);
 void sys_yield(void);
@@ -90,7 +93,6 @@ void kernel_main(void) {
     init_global_descriptor_table();
     extern void activate_tss(void);
     activate_tss();
-    void* test_mem = kmalloc(64);
     if(test_mem) print("MALLOC: Initialized 128KB heap. 64-byte block test footprint OK!n");
     init_syscall_vector_gate();
     init_fat_filesystem();
