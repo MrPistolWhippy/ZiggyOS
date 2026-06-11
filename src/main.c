@@ -33,6 +33,10 @@ void process_command() {
 	} else if (cmd_buffer[0] == 's' && cmd_buffer[1] == 'h') {
 		outw(0xB004, 0x2000); outw(0x604, 0x2000);
 		while(1);
+	} else if (cmd_buffer[0] == 'p' && cmd_buffer[1] == 's') {
+		extern void print_process_status();
+		print_process_status();
+		print("-> ");
 	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
 		shell_clear();
 	} else if (cmd_buffer[0] == 'u' \&\& cmd_buffer[1] == 'p' \&\& cmd_buffer[2] == 't' \&\& cmd_buffer[3] == 'i' \&\& cmd_buffer[4] == 'm' \&\& cmd_buffer[5] == 'e') {
