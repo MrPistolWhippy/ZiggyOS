@@ -1,5 +1,13 @@
 #include <stdint.h>
 
+// New Graphic and Task System Declarations
+void set_text_color(uint8_t fg, uint8_t bg);
+void sys_yield(void);
+
+// New Graphic and Task System Declarations
+void set_text_color(uint8_t fg, uint8_t bg);
+void sys_yield(void);
+
 extern void init_global_descriptor_table(void);
 extern void init_syscall_vector_gate(void);
 extern void init_fat_filesystem(void);
