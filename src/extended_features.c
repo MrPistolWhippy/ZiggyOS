@@ -79,3 +79,28 @@ int run_automated_tests_sys(void) {
     if (test_packet[0] == 0xDEADBEEF) return 0;
     print("[PASS] Crypto packet verification vector success.\n"); return 1;
 }
+
+// --- VIRTUAL MEMORY PAGING FAULT INTERRUPT TRAP (ISR) ---
+typedef struct {
+    uint32_t error_code;
+    uint32_t eip;
+    uint32_t cs;
+    uint32_t eflags;
+} PageFaultFrame_t;
+
+void handle_page_fault(PageFaultFrame_t *frame) {
+    uint32_t faulting_address;
+    // Read CR2 register to capture the exact linear address that caused the fault
+    __asm__ volatile("mov %%cr2, %0" : "=r" (faulting_address));
+
+    print("\n[CRITICAL] !!! VIRTUAL MEMORY PAGE FAULT INT 14 RECOVERY TRAP !!!\n");
+    print("Faulting Memory Linear Address Base: ");
+    if (frame->error_code & 1) print("[Protection Violation] ");
+    else print("[Page Not Present] ");
+    
+    if (frame->error_code & 2) print("[Write Operation]\n");
+    else print("[Read Operation]\n");
+
+    // Defensive Action: Panic Halt to protect underlying kernel memory boundaries
+    while (1) { __asm__ volatile("cli; hlt"); }
+}
