@@ -33,3 +33,15 @@ void kernel_main() {
 		}
 	}
 }
+void process_command() {
+	print("n");
+	if (cmd_buffer[0] == 'r' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'b' \&\& cmd_buffer[3] == 'o' \&\& cmd_buffer[4] == 'o' \&\& cmd_buffer[5] == 't') {
+		print("Rebooting...n");
+		outb(0x64, 0xFE);
+	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
+		shell_clear();
+		print("-> ");
+	} else {
+		print("Unknown command.n-> ");
+	}
+}

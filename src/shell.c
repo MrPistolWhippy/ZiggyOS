@@ -16,3 +16,10 @@ void shell_backspace() {
         video_memory[cursor_pos] = (0x0F << 8) | ' '; // Clear character with blank space
     }
 }
+
+void shell_clear() {
+	for (int i = 0; i < 2000; i++) {
+		*(video_memory + i) = (0x0F << 8) | ' ';
+	}
+	cursor_pos = 0;
+}
