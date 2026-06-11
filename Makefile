@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra
-LDFLAGS = -m32 -nostdlib -Xlinker --no-warn-rwx-segments -T src/linker.ld
+CFLAGS = -m32 -ffreestanding -Os -Wall -Wextra -ffunction-sections -fdata-sections
+LDFLAGS = -m32 -nostdlib -Xlinker --no-warn-rwx-segments -Xlinker --gc-sections -T src/linker.ld
 
 SRC = $(wildcard src/*.c)
 OBJ = $(SRC:.c=.o)
