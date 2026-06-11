@@ -9,10 +9,10 @@ TARGET = os-kernel.bin
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-$(CC) $(LDFLAGS) -o $@ $^ || ld -m elf_i386 -T src/linker.ld -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
-$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-rm -f src/*.o $(TARGET)
+	rm -f src/*.o $(TARGET)
