@@ -1,0 +1,12 @@
+name: build
+on: [push, pull_request]
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Dynamic Makefile and Build
+        run: |
+          # Your existing build steps here
