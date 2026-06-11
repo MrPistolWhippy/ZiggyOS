@@ -7,6 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Install 32-Bit Compilation Libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib
+
       - name: Generate Dynamic Makefile and Build
         run: |
           gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/main.c -o src/main.o
