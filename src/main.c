@@ -172,6 +172,12 @@ void process_command() {
 		print("} else if (cmd_buffer == 'c' && cmd_buffer == 'a' && cmd_buffer == 'l') {
 		extern void app_run_calculator(const char* e);
 		app_run_calculator(&cmd_buffer);
+	} else if (cmd_buffer == 'c' && cmd_buffer == 'r') {
+		extern void app_crypt_file(); app_crypt_file();
+	} else if (cmd_buffer == 'u' && cmd_buffer == 's') {
+		extern void app_user_add(const char* n, const char* p); app_user_add("guest", "1234");
+	} else if (cmd_buffer == 't' && cmd_buffer == 'h') {
+		extern void app_set_system_theme(char s); app_set_system_theme(cmd_buffer);
 	} else {
 		print("Unknown command.n-> ");
 	}
