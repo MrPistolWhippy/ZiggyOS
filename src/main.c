@@ -1,34 +1,38 @@
 #include <stdint.h>
 
-// Submodule function declarations
 extern void app_radio_telemetry_init(void);
 extern void app_radio_telemetry_tick(void);
 extern void app_stego_panic_init(void);
 extern void app_stego_trigger_wipe(void);
 extern void uart_putc(char c);
+extern int uart_getc_nonblocking(char *out_char);
 
 void kernel_main(void) {
+    char rx_cmd;
     char *welcome = "[KERNEL] ZiggyOS Initializing Boot Sequence...\n";
-    while (*welcome) {
-        uart_putc(*welcome++);
-    }
+    while (*welcome) uart_putc(*welcome++);
 
-    // Initialize both application subsystems
     app_radio_telemetry_init();
     app_stego_panic_init();
 
-    char *ready = "[KERNEL] Entering background system task loops.\n";
-    while (*ready) {
-        uart_putc(*ready++);
-    }
+    char *ready = "[KERNEL] Real-Time Polling Listener Running.\n";
+    while (*ready) uart_putc(*ready++);
 
-    // Main operational execution thread
     while (1) {
-        // Continuously tick background telemetry radio broadcasts
+        // Run background telemetry ticks
         app_radio_telemetry_tick();
         
-        // Example: Simulated physical safety interrupt check
-        // If a safety pin layout breaks, trip the wipe line immediately
-        // if (hardware_panic_pin_tripped()) { app_stego_trigger_wipe(); }
+        // Poll for incoming serial commands in real-time
+        if (uart_getc_nonblocking(&rx_cmd)) {
+            // Trigger emergency panic wipe sequence if 'X' or panic token received
+            if (rx_cmd == 'X' || rx_cmd == 'x') {
+                app_stego_trigger_wipe();
+            } else {
+                // Echo character confirmation back to connection channel
+                uart_putc('[');
+                uart_putc(rx_cmd);
+                uart_putc(']');
+            }
+        }
     }
 }

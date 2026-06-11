@@ -1,14 +1,18 @@
 CC = gcc
 CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra
-OBJ = src/main.o src/pci.o src/shell.o src/keyboard.o src/keymap.o src/mmu.o src/app.o src/app_radio_telemetry.o
+LDFLAGS = -m32 -nostdlib -Xlinker --no-warn-rwx-segments -T src/linker.ld
 
-all: os-kernel.bin
+SRC = $(wildcard src/*.c)
+OBJ = $(SRC:.c=.o)
+TARGET = os-kernel.bin
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
+$(CC) $(LDFLAGS) -o $@ $^ || ld -m elf_i386 -T src/linker.ld -o $@ $^
 
 %.o: %.c
-	  -c $< -o 
-
-os-kernel.bin: 
-	ld -m elf_i386 -T linker.ld -o os-kernel.bin 
+$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f src/*.o *.bin *.o
+rm -f src/*.o $(TARGET)
