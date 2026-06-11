@@ -16,3 +16,4 @@ $(TARGET): $(OBJ)
 
 clean:
 	rm -f src/*.o $(TARGET)
+	$(CC) $(CFLAGS) -c src/app_userland.c -o src/app_userland.o
