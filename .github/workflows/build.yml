@@ -8,13 +8,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install 32-Bit Compilation Libraries
+      - name: Provision 32-Bit Compiler Environment
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-multilib
 
-      - name: Generate Dynamic Makefile and Build
+      - name: Execute Local Dedicated Compilation
         run: |
-          # Use your native local Makefile framework directly
           make clean
           make
