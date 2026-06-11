@@ -59,7 +59,7 @@ void app_run_calculator(const char* expr) {
     else if(op == '-') res = num1 - num2;
     else if(op == '*') res = num1 * num2;
     else if(op == '/') {
-        if(b == 0) { print("Error: Div by 0!\n"); return; }
+        if(num2 == 0) { print("Error: Div by 0!\n"); return; }
         res = num1 / num2;
     } else {
         print("Invalid math string format!\n");
