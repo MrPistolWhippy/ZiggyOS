@@ -73,6 +73,8 @@ void run_userland_shell(void) {
 }
 
 void kernel_main(void) {
+    extern void init_mmu(void);
+    init_mmu();
     print("\n==================================================\n");
     print("[ZIGGYOS] BOOT: 5 NEW ADVANCED CONCURRENCY LAYERS ONLINE\n");
     print("==================================================\n");

@@ -1,46 +1,54 @@
 #include <stdint.h>
 
-extern void print(const char *str);
+extern void print(const char* str);
+extern void print_hex_byte(uint8_t b);
 
-// --- 1. USERLAND THREAD SYNCHRONIZATION SEMAPHORES ---
-typedef struct {
-    volatile int32_t count;
-} Semaphore_t;
-
-void semaphore_wait_sys(Semaphore_t *sem) {
-    while (__sync_sub_and_fetch(&sem->count, 1) < 0) {
-        __sync_add_and_fetch(&sem->count, 1); // Back off and poll defensively
-    }
-}
-void semaphore_post_sys(Semaphore_t *sem) {
-    __sync_add_and_fetch(&sem->count, 1);
+// Direct assembly port out/in wrappers
+static inline void outl(uint16_t port, uint32_t val) {
+    asm volatile("outl %0, %1" : : "a"(val), "Nd"(port));
 }
 
-// --- 2. PCI HARDWARE BUS MAPPING & PROBER ---
-void probe_pci_bus_sys(void) {
-    print("[PCI] Probing bus hardware configurations...\n");
-    print("[PCI] Found Device 0x10EC:0x8139 (Realtek Network Controller) at Bus 0 Slot 1\n");
+static inline uint32_t inl(uint16_t port) {
+    uint32_t ret;
+    asm volatile("inl %1, %0" : "=a"(ret) : "Nd"(port));
+    return ret;
 }
 
-// --- 3. INTERRUPT REQUEST (IRQ) SHARING CONTROLLER ---
-void irq_register_shared_handler_sys(uint8_t irq_line) {
-    (void)irq_line;
-    print("[IRQ] Shared interrupt line mapping registered successfully.\n");
-}
-
-// --- 4. DMA DYNAMIC SCATTER-GATHER ENGINE ---
-typedef struct {
+// Read raw configuration attributes from target hardware bus vectors
+uint32_t pci_config_read(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t address;
-    uint32_t length;
-} ScatterGatherDesc_t;
-
-void dma_setup_scatter_gather_sys(ScatterGatherDesc_t *list, uint32_t count) {
-    (void)list; (void)count;
-    print("[DMA] Configuring Scatter-Gather descriptor tracking structures...\n");
+    uint32_t lbus  = (uint32_t)bus;
+    uint32_t lslot = (uint32_t)slot;
+    uint32_t lfunc = (uint32_t)func;
+    
+    // Construct target configurations register layout address token bitfield
+    address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xFC) | ((uint32_t)0x80000000));
+    
+    outl(0xCF8, address);
+    return inl(0xCFC);
 }
 
-// --- 5. REAL-TIME TASK EXECUTION PROFILER ---
-static uint64_t task_execution_ticks = 0;
-void profile_task_runtime_sys(void) {
-    task_execution_ticks++;
+void probe_pci_bus_sys(void) {
+    print("PCI: Initiating peripheral configuration bus scan...\n");
+    
+    // Scan common low-level device slot arrays
+    for (uint8_t bus = 0; bus < 8; bus++) {
+        for (uint8_t slot = 0; slot < 32; slot++) {
+            uint32_t reg0 = pci_config_read(bus, slot, 0, 0);
+            uint16_t vendor_id = reg0 & 0xFFFF;
+            
+            // If Vendor ID is not 0xFFFF, a valid peripheral device is present!
+            if (vendor_id != 0xFFFF) {
+                uint16_t device_id = (reg0 >> 16) & 0xFFFF;
+                print("  - Found Device! Bus: ");
+                print_hex_byte(bus);
+                print(" Slot: ");
+                print_hex_byte(slot);
+                print(" | Vendor: [0x");
+                print_hex_byte((vendor_id >> 8) & 0xFF);
+                print_hex_byte(vendor_id & 0xFF);
+                print("]\n");
+            }
+        }
+    }
 }
