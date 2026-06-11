@@ -38,3 +38,21 @@ void kernel_main() {
 		}
 	}
 }
+void kernel_main() {
+	print("ZiggyOS Custom Spectrum Interfacen-> ");
+	while(1) {
+		unsigned char scancode = keyboard_read();
+		char ascii = scancode_to_ascii(scancode);
+		if (ascii != 0) {
+			if (ascii == 'n') {
+				cmd_buffer[cmd_index] = '0';
+				process_command();
+				cmd_index = 0;
+			} else if (ascii == 'b') {
+				if (cmd_index > 0) { cmd_index--; shell_backspace(); }
+			} else {
+				if (cmd_index < 255) { cmd_buffer[cmd_index++] = ascii; print_char(ascii); }
+			}
+		}
+	}
+}
