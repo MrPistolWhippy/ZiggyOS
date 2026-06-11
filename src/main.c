@@ -7,28 +7,32 @@ extern void app_stego_trigger_wipe(void);
 extern void uart_putc(char c);
 extern int uart_getc_nonblocking(char *out_char);
 
+// New component linkages
+extern void init_interrupt_priorities(void);
+extern int run_automated_tests(void);
+extern void print(const char *str);
+
 void kernel_main(void) {
     char rx_cmd;
-    char *welcome = "[KERNEL] ZiggyOS Initializing Boot Sequence...\n";
-    while (*welcome) uart_putc(*welcome++);
+    print("[KERNEL] ZiggyOS Extended Architecture Booting...\n");
+
+    // Initialize priorities, run self-tests, and start driver stacks
+    init_interrupt_priorities();
+    if (!run_automated_tests()) {
+        app_stego_trigger_wipe(); // Panic if firmware validation fails
+    }
 
     app_radio_telemetry_init();
     app_stego_panic_init();
-
-    char *ready = "[KERNEL] Real-Time Polling Listener Running.\n";
-    while (*ready) uart_putc(*ready++);
+    print("[KERNEL] All 5 submodules online. Listening for telemetry commands.\n");
 
     while (1) {
-        // Run background telemetry ticks
         app_radio_telemetry_tick();
         
-        // Poll for incoming serial commands in real-time
         if (uart_getc_nonblocking(&rx_cmd)) {
-            // Trigger emergency panic wipe sequence if 'X' or panic token received
             if (rx_cmd == 'X' || rx_cmd == 'x') {
                 app_stego_trigger_wipe();
             } else {
-                // Echo character confirmation back to connection channel
                 uart_putc('[');
                 uart_putc(rx_cmd);
                 uart_putc(']');
