@@ -71,4 +71,4 @@ jobs:
         # Compile, assemble, and link the final image target cleanly
         # Inject core architecture source module explicitly
         gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/app_upgrade_layer.c -o src/app_upgrade_layer.o
-        make all
+        # Compile advanced steganographic kernel modulen        gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/app_stego_panic.c -o src/app_stego_panic.on        make all
