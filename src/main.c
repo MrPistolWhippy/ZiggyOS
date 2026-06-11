@@ -1,215 +1,63 @@
-#include "io.h"
-unsigned char keyboard_read();
-int keyboard_has_key();
-char scancode_to_ascii(unsigned char scancode);
-void print(const char* str);
-void print_char(char c);
-void shell_backspace();
-void shell_clear();
-void init_gdt();
-void init_idt();
-void pic_remap();
-unsigned long timer_ticks = 0;
-char cmd_buffer[256];
-int cmd_index = 0;
-void print_uptime() {
-	unsigned long seconds = timer_ticks / 10000;
-	print("System Uptime: ");
-	char buf[16];
-	int i = 0;
-	if(seconds == 0) { print("0sn"); return; }
-	while(seconds > 0) {
-		buf[i++] = '0' + (seconds % 10);
-		seconds /= 10;
-	}
-	while(i > 0) { print_char(buf[--i]); }
-	print("sn");
+#include <stdint.h>
+#include <string.h>
+
+#define REG(addr)   (*(volatile uint32_t*)(addr))
+#define UART_DR     REG(0x4000C000)
+#define STK_CTRL    REG(0xE000E010)
+#define STK_LOAD    REG(0xE000E014)
+
+uint32_t t_stk[3][64];
+uint32_t* t_sp[3];
+uint32_t task_sleep[3] = {0, 0, 0};
+
+void send(char c) {
+    while ((REG(0x4000C004) & 2) == 0);
+    REG(0x4000C000) = c;
 }
-void process_command() {
-	print("n");
-	if (cmd_buffer[0] == 'r' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'b' \&\& cmd_buffer[3] == 'o' \&\& cmd_buffer[4] == 'o' \&\& cmd_buffer[5] == 't') {
-		print("Rebooting...n");
-		outb(0x64, 0xFE);
-	} else if (cmd_buffer[0] == 's' && cmd_buffer[1] == 'h') {
-		outw(0xB004, 0x2000); outw(0x604, 0x2000);
-		while(1);
-	} else if (cmd_buffer[0] == 'p' && cmd_buffer[1] == 's') {
-		extern void print_process_status();
-	} else if (cmd_buffer[0] == 'm' && cmd_buffer[1] == 's' && cmd_buffer[2] == 'g') {
-		extern void ipc_send(const char* m);
-		extern void ipc_receive();
-	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
-		extern void mmu_trigger_beep();
-	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
-		extern void mmu_hex_dump(void* start);
-		print("Dumping Core GDT Memory Matrix:n");
-		extern struct gdt_entry gdt;
-		mmu_hex_dump(&gdt);
-	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
-		extern void app_matrix_screensaver();
-		app_matrix_screensaver();
-	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
-		extern void app_print_system_info();
-		app_print_system_info();
-		print("Sounding hardware speaker...n");
-		mmu_trigger_beep();
-	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
-		extern void mmu_hex_dump(void* start);
-		print("Dumping Core GDT Memory Matrix:n");
-		extern struct gdt_entry gdt;
-		mmu_hex_dump(&gdt);
-	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
-		extern void app_matrix_screensaver();
-		app_matrix_screensaver();
-	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
-		extern void app_print_system_info();
-		app_print_system_info();
-		ipc_send("Hello from Task 0!");
-		ipc_receive();
-	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
-		extern void mmu_trigger_beep();
-	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
-		extern void mmu_hex_dump(void* start);
-		print("Dumping Core GDT Memory Matrix:n");
-		extern struct gdt_entry gdt;
-		mmu_hex_dump(&gdt);
-	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
-		extern void app_matrix_screensaver();
-		app_matrix_screensaver();
-	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
-		extern void app_print_system_info();
-		app_print_system_info();
-		print("Sounding hardware speaker...n");
-		mmu_trigger_beep();
-	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
-		extern void mmu_hex_dump(void* start);
-		print("Dumping Core GDT Memory Matrix:n");
-		extern struct gdt_entry gdt;
-		mmu_hex_dump(&gdt);
-	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
-		extern void app_matrix_screensaver();
-		app_matrix_screensaver();
-	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
-		extern void app_print_system_info();
-		app_print_system_info();
-		print_process_status();
-	} else if (cmd_buffer[0] == 'm' && cmd_buffer[1] == 's' && cmd_buffer[2] == 'g') {
-		extern void ipc_send(const char* m);
-		extern void ipc_receive();
-	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
-		extern void mmu_trigger_beep();
-	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
-		extern void mmu_hex_dump(void* start);
-		print("Dumping Core GDT Memory Matrix:n");
-		extern struct gdt_entry gdt;
-		mmu_hex_dump(&gdt);
-	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
-		extern void app_matrix_screensaver();
-		app_matrix_screensaver();
-	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
-		extern void app_print_system_info();
-		app_print_system_info();
-		print("Sounding hardware speaker...n");
-		mmu_trigger_beep();
-	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
-		extern void mmu_hex_dump(void* start);
-		print("Dumping Core GDT Memory Matrix:n");
-		extern struct gdt_entry gdt;
-		mmu_hex_dump(&gdt);
-	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
-		extern void app_matrix_screensaver();
-		app_matrix_screensaver();
-	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
-		extern void app_print_system_info();
-		app_print_system_info();
-		ipc_send("Hello from Task 0!");
-		ipc_receive();
-	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
-		extern void mmu_trigger_beep();
-	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
-		extern void mmu_hex_dump(void* start);
-		print("Dumping Core GDT Memory Matrix:n");
-		extern struct gdt_entry gdt;
-		mmu_hex_dump(&gdt);
-	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
-		extern void app_matrix_screensaver();
-		app_matrix_screensaver();
-	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
-		extern void app_print_system_info();
-		app_print_system_info();
-		print("Sounding hardware speaker...n");
-		mmu_trigger_beep();
-	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
-		extern void mmu_hex_dump(void* start);
-		print("Dumping Core GDT Memory Matrix:n");
-		extern struct gdt_entry gdt;
-		mmu_hex_dump(&gdt);
-	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
-		extern void app_matrix_screensaver();
-		app_matrix_screensaver();
-	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
-		extern void app_print_system_info();
-		app_print_system_info();
-		print("-> ");
-	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
-		shell_clear();
-	} else if (cmd_buffer[0] == 'u' \&\& cmd_buffer[1] == 'p' \&\& cmd_buffer[2] == 't' \&\& cmd_buffer[3] == 'i' \&\& cmd_buffer[4] == 'm' \&\& cmd_buffer[5] == 'e') {
-		print_uptime();
-		print("-> ");
-	} else if (cmd_buffer[0] == 'm' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'm') {
-		extern void* malloc(unsigned int size);
-		extern void free(void* ptr, unsigned int size);
-		void* block = malloc(4096);
-		print("Heap Allocated/Freed 4KB Block At: 0x");
-		unsigned int addr = (unsigned int)block;
-		char buf[16];
-		int i = 0;
-		while(addr > 0) { unsigned int rem = addr % 16; if(rem < 10) buf[i++] = '0' + rem; else buf[i++] = 'A' + (rem - 10); addr /= 16; }
-		while(i > 0) { print_char(buf[--i]); }
-		free(block, 4096);
-		print("n-> ");
-	} else {
-		print("} else if (cmd_buffer == 'c' && cmd_buffer == 'a' && cmd_buffer == 'l') {
-		extern void app_run_calculator(const char* e);
-		app_run_calculator(&cmd_buffer);
-	} else if (cmd_buffer == 'c' && cmd_buffer == 'r') {
-		extern void app_crypt_file(); app_crypt_file();
-	} else if (cmd_buffer == 'u' && cmd_buffer == 's') {
-		extern void app_user_add(const char* n, const char* p); app_user_add("guest", "1234");
-	} else if (cmd_buffer == 't' && cmd_buffer == 'h') {
-		extern void app_set_system_theme(char s); app_set_system_theme(cmd_buffer);
-	} else if (cmd_buffer == 't' && cmd_buffer == 'o') {
-		extern void app_run_top_monitor(); app_run_top_monitor(); print("-> ");
-	} else if (cmd_buffer == 'n' && cmd_buffer == 'a') {
-		extern void app_run_nano_editor(); app_run_nano_editor();
-	} else {
-		print("Unknown command.n-> ");
-	}
+
+void task1(void) { while(1) { send('1'); } }
+void task2(void) { while(1) { send('2'); } }
+
+void task3(void) {
+    char b[32]; uint8_t idx = 0;
+    while (1) {
+        char c = UART_DR;
+        if (c != 0) {
+            send(c);
+            if (c == 13 || c == 10) {
+                b[idx] = 0;
+                if (strcmp(b, "help") == 0) send('H');
+                else if (strcmp(b, "status") == 0) send('S');
+                idx = 0;
+            } else if (idx < 31) {
+                b[idx++] = c;
+            }
+        }
+    }
 }
-void kernel_main() {
-	init_gdt();
-	init_idt();
-	pic_remap();
-	shell_clear();
-	__asm__ __volatile__("sti");
-	print("ZiggyOS Active PIC Enabled Shelln-> ");
-	while(1) {
-		timer_ticks++;
-		if (keyboard_has_key()) {
-			unsigned char scancode = keyboard_read();
-			char ascii = scancode_to_ascii(scancode);
-			if (ascii != 0) {
-				if (ascii == 'n') {
-					cmd_buffer[cmd_index] = '0';
-					process_command();
-					cmd_index = 0;
-				} else if (ascii == 'b') {
-					if (cmd_index > 0) { cmd_index--; shell_backspace(); }
-				} else {
-					if (cmd_index < 255) { cmd_buffer[cmd_index++] = ascii; print_char(ascii); }
-				}
-			}
-		}
-	}
+
+void init_t(int id, void (*f)(void), uint32_t *stk) {
+    stk[63] = 0x01000000;
+    stk[62] = (uint32_t)f;
+    t_sp[id] = &stk[46];
+    task_sleep[id] = 0;
 }
-// Build Sync Validation Pass
+
+void Reset_Handler(void) {
+    REG(0xE000ED94) = 0; REG(0x40087004) |= 0x30;
+    REG(0x400FF428) = (1 << 4);
+    
+    init_t(0, task1, t_stk[0]);
+    init_t(1, task2, t_stk[1]);
+    init_t(2, task3, t_stk[2]);
+    
+    STK_LOAD = 16000 - 1;
+    STK_CTRL = 0x07;
+    __asm__ volatile ("cpsie i");
+    task1();
+}
+
+void HardFault_Handler(void) { while(1); }
+void PendSV_Handler(void) { while(1); }
+void SysTick_Handler(void) { while(1); }
+void UART0_Handler(void) { while(1); }
