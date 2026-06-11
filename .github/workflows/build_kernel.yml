@@ -19,26 +19,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-multilib build-essential nasm
 
-    - name: Assemble Cloud Compilation Workspace
+    - name: Verify Cloud Compilation Workspace
       run: |
-        # Clear out our build directory to prevent legacy conflicts
-        rm -rf src
-        mkdir -p src
-        
-        # Pull your primary production source files into focus out of kernel_core
-        if [ -d "kernel_core/src" ]; then
-          cp -r kernel_core/src/* src/ || true
-        elif [ -d "src_fixed" ]; then
-          cp -r src_fixed/* src/ || true
-        fi
-        
-        # Ensure our input/output dependency layer is set up natively
+        # Ensure our required empty input/output header dependency is present
         touch src/io.h
         
-        # Clear out any stray binaries or pre-compiled objects from your local track
-        rm -f src/*.o *.o *.bin
-        
-        echo "=== Verifying Available Production Source Files ==="
+        echo "=== Verifying Tracked Source Files ==="
         ls -la src/
 
     - name: Generate Dynamic Makefile and Build
@@ -57,5 +43,5 @@ jobs:
         echo "os-kernel.bin: \$(OBJS)" >> Makefile
         printf "\tld -m elf_i386 -T linker.ld -o os-kernel.bin \$(OBJS)\n" >> Makefile
         
-        # Compile, assemble, and link the operating system image natively
+        # Compile, assemble, and link everything natively
         make all
