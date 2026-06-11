@@ -73,6 +73,8 @@ void run_userland_shell(void) {
 }
 
 void kernel_main(void) {
+    extern void init_global_descriptor_table(void);
+    init_global_descriptor_table();
     extern void init_mmu(void);
     init_mmu();
     void init_pit_timer(uint32_t frequency);
