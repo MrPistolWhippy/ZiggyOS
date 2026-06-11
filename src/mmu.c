@@ -103,3 +103,33 @@ void pic_remap() {
 	outb(0x21, 0x0);
 	outb(0xA1, 0x0);
 }
+
+void play_sound(unsigned int nFrequence) {
+unsigned int Div;
+unsigned char tmp;
+
+// Calculate the 8253 timer divisor based on the requested pitch frequency
+Div = 1193180 / nFrequence;
+
+// Set command byte to prepare Channel 2 square wave generation
+outb(0x43, 0xB6);
+outb(0x42, (unsigned char) (Div & 0xFF));
+outb(0x42, (unsigned char) ((Div >> 8) & 0xFF));
+
+// Read Port 0x61, then turn on bits 0 and 1 to connect the speaker output
+tmp = inb(0x61);
+if (tmp != (tmp | 3)) {
+outb(0x61, tmp | 3);
+}
+}
+
+void nosound() {
+unsigned char tmp = inb(0x61) & 0xFC; // Turn off bits 0 and 1 to mute
+outb(0x61, tmp);
+}
+
+void mmu_trigger_beep() {
+play_sound(440); // Standard 440Hz "Concert A" pitch tone
+for(volatile int i = 0; i < 20000000; i++); // Short loop delay interval block
+nosound();
+}

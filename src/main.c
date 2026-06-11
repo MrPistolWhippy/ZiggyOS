@@ -38,14 +38,30 @@ void process_command() {
 	} else if (cmd_buffer[0] == 'm' && cmd_buffer[1] == 's' && cmd_buffer[2] == 'g') {
 		extern void ipc_send(const char* m);
 		extern void ipc_receive();
+	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
+		extern void mmu_trigger_beep();
+		print("Sounding hardware speaker...n");
+		mmu_trigger_beep();
 		ipc_send("Hello from Task 0!");
 		ipc_receive();
+	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
+		extern void mmu_trigger_beep();
+		print("Sounding hardware speaker...n");
+		mmu_trigger_beep();
 		print_process_status();
 	} else if (cmd_buffer[0] == 'm' && cmd_buffer[1] == 's' && cmd_buffer[2] == 'g') {
 		extern void ipc_send(const char* m);
 		extern void ipc_receive();
+	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
+		extern void mmu_trigger_beep();
+		print("Sounding hardware speaker...n");
+		mmu_trigger_beep();
 		ipc_send("Hello from Task 0!");
 		ipc_receive();
+	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
+		extern void mmu_trigger_beep();
+		print("Sounding hardware speaker...n");
+		mmu_trigger_beep();
 		print("-> ");
 	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
 		shell_clear();
