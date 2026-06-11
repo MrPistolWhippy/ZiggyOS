@@ -97,7 +97,7 @@ struct bpb_structure {
 } __attribute__((packed));
 
 void init_fat_filesystem(void) {
-    print("FAT: Initializing storage driver mount...n");
+    set_text_color(0x0E, 0x01); print("ZIGGYOS: Task Engine Spinning Up...n"); set_text_color(0x0A, 0x00); sys_yield();
     
     // Allocate a sector buffer on stack
     uint8_t sector_buffer[512];
