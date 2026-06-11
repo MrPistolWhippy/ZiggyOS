@@ -1,1 +1,10 @@
-.syntax unified\n.cpu cortex-m4\n.thumb\n.global _reset_handler\n.global _vector_table\n.section .vector_table, \"a\"\n_vector_table:\n.word 0x20010000\n.word _reset_handler\n.section .text\n_reset_handler:\ncpsid i\nbl main\n1: b 1\n
+.global _start
+
+.section .text
+_start:
+    call kernel_main
+
+hang:
+    cli
+    hlt
+    jmp hang
