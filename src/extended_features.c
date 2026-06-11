@@ -11,22 +11,18 @@ void telemetry_encrypt(uint32_t *v, uint32_t const *key) {
     v[0] = v0; v[1] = v1;
 }
 
-// 2. REAL-TIME DIAGNOSTIC LOG ENGINE 
-void print(const char *str) {
-    extern void uart_putc(char c);
-    while (*str) {
-        uart_putc(*str++);
-    }
-}
-
-// 3. INTERRUPT PRIORITY RING MAPS
+// 2. INTERRUPT PRIORITY RING MAPS
 void init_interrupt_priorities(void) {
+    // Relying on the cloud-provided print symbol linkage
+    extern void print(const char *str);
     print("[CPU] Configuring interrupt priority rings...\n");
 }
 
-// 4. AUTOMATED TEST VECTORS
+// 3. AUTOMATED TEST VECTORS
 int run_automated_tests(void) {
+    extern void print(const char *str);
     print("[TEST] Running automated microkernel verification vectors...\n");
+    
     uint32_t test_packet[2] = {0xDEADBEEF, 0xCAFEBABE};
     uint32_t crypto_key[4]  = {0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210};
     
