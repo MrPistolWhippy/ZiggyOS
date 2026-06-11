@@ -19,17 +19,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-multilib build-essential nasm
 
-    - name: Verify Cloud Compilation Workspace
+    - name: Clean Architecture Workspace
       run: |
-        # Ensure our required empty input/output header dependency is present
+        # Explicitly delete all pre-existing ARM .o binaries to force a clean x86 compile
+        rm -f src/*.o *.o *.bin *.elf
         touch src/io.h
-        
-        echo "=== Verifying Tracked Source Files ==="
-        ls -la src/
 
     - name: Generate Dynamic Makefile and Build
       run: |
-        # Build our tab-compliant automated Makefile mapping
         echo "CC = gcc" > Makefile
         echo "CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra" >> Makefile
         echo "SRCS = \$(wildcard src/*.c)" >> Makefile
@@ -43,5 +40,5 @@ jobs:
         echo "os-kernel.bin: \$(OBJS)" >> Makefile
         printf "\tld -m elf_i386 -T linker.ld -o os-kernel.bin \$(OBJS)\n" >> Makefile
         
-        # Compile, assemble, and link everything natively
+        # Build the architecture targets
         make all
