@@ -187,5 +187,5 @@ int flash_read_sector(uint32_t sector, uint8_t* buffer) {
 }
 
 // Hardware Diagnostic IRQ and Profiler Core System Fallbacks
-void irq_register_shared_handler_sys(int irq, void (*handler)(void*), void* arg) { (void)irq; (void)handler; (void)arg; }
+void irq_register_shared_handler_sys(uint8_t irq_line) { (void)irq_line; }
 void profile_task_runtime_sys(void) {}
