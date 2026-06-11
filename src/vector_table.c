@@ -8,3 +8,18 @@ void (* const vector_table[])(void) = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UART0_Handler
 };
+
+// --- SELF-CONTAINED INTERRUPT EXCEPTION FALLBACK HANDLERS ---
+void Reset_Handler(void) {
+    extern void kernel_main(void);
+    kernel_main();
+}
+
+void Default_Handler(void) {
+    while (1);
+}
+
+void HardFault_Handler(void) { Default_Handler(); }
+void PendSV_Handler(void)    { Default_Handler(); }
+void SysTick_Handler(void)   { Default_Handler(); }
+void UART0_Handler(void)     { Default_Handler(); }
