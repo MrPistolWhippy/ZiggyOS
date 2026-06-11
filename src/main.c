@@ -178,6 +178,10 @@ void process_command() {
 		extern void app_user_add(const char* n, const char* p); app_user_add("guest", "1234");
 	} else if (cmd_buffer == 't' && cmd_buffer == 'h') {
 		extern void app_set_system_theme(char s); app_set_system_theme(cmd_buffer);
+	} else if (cmd_buffer == 't' && cmd_buffer == 'o') {
+		extern void app_run_top_monitor(); app_run_top_monitor(); print("-> ");
+	} else if (cmd_buffer == 'n' && cmd_buffer == 'a') {
+		extern void app_run_nano_editor(); app_run_nano_editor();
 	} else {
 		print("Unknown command.n-> ");
 	}
