@@ -1,1 +1,2 @@
-#include <stdint.h>\ntypedef struct { volatile uint32_t SR; volatile uint32_t DR; } UART_t;\n#define UART ((UART_t *)0x40004400)\nchar rb[256]; uint8_t wr=0, rd=0;\nvoid uart_putc_dma(char c) { rb[wr++]=c; if(UART->SR & 0x80) { UART->DR = rb[rd++]; } }\n
+#include <stdint.h>\
+typedef struct { volatile uint32_t SR; volatile uint32_t DR; } UART_t;\n#define UART ((UART_t *)0x40004400)\nchar rb[256]; uint8_t wr=0, rd=0;\nvoid uart_putc_dma(char c) { rb[wr++]=c; if(UART->SR & 0x80) { UART->DR = rb[rd++]; } }\n
