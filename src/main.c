@@ -5,7 +5,7 @@ char scancode_to_ascii(unsigned char scancode);
 void print(const char* str);
 void print_char(char c);
 void shell_backspace();
-void init_gdt(); shell_clear(); print("GDT Initialized.n");
+void shell_clear();
 void init_gdt();
 unsigned long timer_ticks = 0;
 char cmd_buffer[256];
@@ -23,23 +23,10 @@ void print_uptime() {
 	while(i > 0) { print_char(buf[--i]); }
 	print("sn");
 }
-void process_command() {
-	print("n");
-	if (cmd_buffer[0] == 'r' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'b' \&\& cmd_buffer[3] == 'o' \&\& cmd_buffer[4] == 'o' \&\& cmd_buffer[5] == 't') {
-		print("Rebooting...n");
-		outb(0x64, 0xFE);
-	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
-		init_gdt(); shell_clear(); print("GDT Initialized.n");
-	} else if (cmd_buffer[0] == 'u' \&\& cmd_buffer[1] == 'p' \&\& cmd_buffer[2] == 't' \&\& cmd_buffer[3] == 'i' \&\& cmd_buffer[4] == 'm' \&\& cmd_buffer[5] == 'e') {
-		print_uptime();
-		print("-> ");
-	} else {
-		print("Unknown command.n-> ");
-	}
-}
 void kernel_main() {
-	init_gdt(); shell_clear(); print("GDT Initialized.n");
-	print("ZiggyOS Async Ticker Shelln-> ");
+	init_gdt();
+	shell_clear();
+	print("ZiggyOS Custom Segmented Shelln-> ");
 	while(1) {
 		timer_ticks++;
 		if (keyboard_has_key()) {

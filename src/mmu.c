@@ -31,3 +31,8 @@ void init_gdt() {
 	extern void gdt_flush(unsigned int);
 	gdt_flush((unsigned int)\&gp);
 }
+
+unsigned short mmu_get_base_memory() {
+	volatile unsigned short* bios_ptr = (volatile unsigned short*)0x413;
+	return *bios_ptr;
+}
