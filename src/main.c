@@ -5,8 +5,22 @@ void print(const char* str);
 void print_char(char c);
 void shell_backspace();
 void shell_clear();
+unsigned long timer_ticks = 0;
 char cmd_buffer[256];
 int cmd_index = 0;
+void print_uptime() {
+	unsigned long seconds = timer_ticks / 100;
+	print("System Uptime: ");
+	char buf[16];
+	int i = 0;
+	if(seconds == 0) { print("0sn"); return; }
+	while(seconds > 0) {
+		buf[i++] = '0' + (seconds % 10);
+		seconds /= 10;
+	}
+	while(i > 0) { print_char(buf[--i]); }
+	print("sn");
+}
 void process_command() {
 	print("n");
 	if (cmd_buffer[0] == 'r' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'b' \&\& cmd_buffer[3] == 'o' \&\& cmd_buffer[4] == 'o' \&\& cmd_buffer[5] == 't') {
@@ -14,23 +28,18 @@ void process_command() {
 		outb(0x64, 0xFE);
 	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
 		shell_clear();
-	} else if (cmd_buffer[0] == 'h' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'l' \&\& cmd_buffer[3] == 'p') {
-		print("ZiggyOS Commands:n  help    - Commands listn  clear   - Wipe screenn  reboot  - Restartn  teal    - Teal spectrumn  emerald - Emerald spectrumn-> ");
-	} else if (cmd_buffer[0] == 't' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'a' \&\& cmd_buffer[3] == 'l') {
-		extern char current_color;
-		current_color = 0x03;
-		print("Electric Teal theme loaded.n-> ");
-	} else if (cmd_buffer[0] == 'e' \&\& cmd_buffer[1] == 'm' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'r' \&\& cmd_buffer[4] == 'a' \&\& cmd_buffer[5] == 'l' \&\& cmd_buffer[6] == 'd') {
-		extern char current_color;
-		current_color = 0x0A;
-		print("Emerald Spectrum theme loaded.n-> ");
+	} else if (cmd_buffer[0] == 'u' \&\& cmd_buffer[1] == 'p' \&\& cmd_buffer[2] == 't' \&\& cmd_buffer[3] == 'i' \&\& cmd_buffer[4] == 'm' \&\& cmd_buffer[5] == 'e') {
+		print_uptime();
+		print("-> ");
 	} else {
 		print("Unknown command.n-> ");
 	}
 }
 void kernel_main() {
-	print("ZiggyOS Custom Spectrum Interfacen-> ");
+	shell_clear();
+	print("ZiggyOS Upgraded Runtime Environmentn-> ");
 	while(1) {
+		timer_ticks++;
 		unsigned char scancode = keyboard_read();
 		char ascii = scancode_to_ascii(scancode);
 		if (ascii != 0) {
