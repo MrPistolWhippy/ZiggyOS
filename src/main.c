@@ -75,6 +75,8 @@ void run_userland_shell(void) {
 void kernel_main(void) {
     extern void init_mmu(void);
     init_mmu();
+    void init_pit_timer(uint32_t frequency);
+    init_pit_timer(100); // Initialize system heartbeat line at 100Hz
     print("\n==================================================\n");
     print("[ZIGGYOS] BOOT: 5 NEW ADVANCED CONCURRENCY LAYERS ONLINE\n");
     print("==================================================\n");
@@ -189,3 +191,35 @@ int flash_read_sector(uint32_t sector, uint8_t* buffer) {
 // Hardware Diagnostic IRQ and Profiler Core System Fallbacks
 void irq_register_shared_handler_sys(uint8_t irq_line) { (void)irq_line; }
 void profile_task_runtime_sys(void) {}
+
+// 8253 PIT System Clock & ISR Runtime Architecture
+static uint32_t system_timer_ticks = 0;
+
+void init_pit_timer(uint32_t frequency) {
+    print("PIT: Configuring 8253 Programmable Interval Timer...n");
+    
+    // The internal oscillator frequency base is exactly 1193182 Hz
+    uint32_t divisor = 1193182 / frequency;
+    
+    // Send Command Byte 0x36 (Square Wave Mode, LSB then MSB, Channel 0) to Port 0x43
+    asm volatile("outb %%al, %%dx" : : "a"((uint8_t)0x36), "d"((uint16_t)0x43));
+    
+    // Split and transmit the 16-bit divisor frequency configuration onto Data Port 0x40
+    asm volatile("outb %%al, %%dx" : : "a"((uint8_t)(divisor & 0xFF)), "d"((uint16_t)0x40));
+    asm volatile("outb %%al, %%dx" : : "a"((uint8_t)((divisor >> 8) & 0xFF)), "d"((uint16_t)0x40));
+    
+    print("PIT: Hardware clock line bound to frequency channel successfully.n");
+}
+
+// Low-Level Interrupt Service Routine Entry Handler for the System Timer (IRQ 0)
+void pit_isr_handler(void) {
+    system_timer_ticks++;
+    
+    // Periodically print a system heartbeat every 100 ticks
+    if (system_timer_ticks % 100 == 0) {
+        print("[TICK HEARTBEAT] ");
+    }
+    
+    // Acknowledge the interrupt by flashing an EOI token to the master PIC (Port 0x20)
+    asm volatile("outb %%al, %%dx" : : "a"((uint8_t)0x20), "d"((uint16_t)0x20));
+}
