@@ -8,6 +8,7 @@ void shell_backspace();
 void shell_clear();
 void init_gdt();
 void init_idt();
+void pic_remap();
 unsigned long timer_ticks = 0;
 char cmd_buffer[256];
 int cmd_index = 0;
@@ -50,37 +51,13 @@ void process_command() {
 		print("Unknown command.n-> ");
 	}
 }
-void process_command() {
-	print("n");
-	if (cmd_buffer[0] == 'r' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'b' \&\& cmd_buffer[3] == 'o' \&\& cmd_buffer[4] == 'o' \&\& cmd_buffer[5] == 't') {
-		print("Rebooting...n");
-		outb(0x64, 0xFE);
-	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
-		shell_clear();
-	} else if (cmd_buffer[0] == 'u' \&\& cmd_buffer[1] == 'p' \&\& cmd_buffer[2] == 't' \&\& cmd_buffer[3] == 'i' \&\& cmd_buffer[4] == 'm' \&\& cmd_buffer[5] == 'e') {
-		print_uptime();
-		print("-> ");
-	} else if (cmd_buffer[0] == 'm' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'm') {
-		extern void* malloc(unsigned int size);
-		extern void free(void* ptr, unsigned int size);
-		void* block = malloc(4096);
-		print("Heap Allocated/Freed 4KB Block At: 0x");
-		unsigned int addr = (unsigned int)block;
-		char buf[16];
-		int i = 0;
-		while(addr > 0) { unsigned int rem = addr % 16; if(rem < 10) buf[i++] = '0' + rem; else buf[i++] = 'A' + (rem - 10); addr /= 16; }
-		while(i > 0) { print_char(buf[--i]); }
-		free(block, 4096);
-		print("n-> ");
-	} else {
-		print("Unknown command.n-> ");
-	}
-}
 void kernel_main() {
 	init_gdt();
 	init_idt();
+	pic_remap();
 	shell_clear();
-	print("ZiggyOS Interrupt Core Shelln-> ");
+	__asm__ __volatile__("sti");
+	print("ZiggyOS Active PIC Enabled Shelln-> ");
 	while(1) {
 		timer_ticks++;
 		if (keyboard_has_key()) {
