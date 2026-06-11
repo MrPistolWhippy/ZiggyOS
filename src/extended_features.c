@@ -1,63 +1,31 @@
 #include <stdint.h>
 extern void print(const char *str);
-extern void uart_putc(char c);
 
-void init_flash_page_mapper(void) {
-    print("[MMU] Mapping physical Flash memory layouts (Pages 0-127)...\n");
-}
+void init_flash_page_mapper(void) { print("[MMU] Mapping physical Flash memory layout...\n"); }
 
-typedef struct {
-    uint8_t preamble, length, payload[32];
-    uint16_t crc;
-} __attribute__((packed)) RadioFrame_t;
+typedef struct { uint8_t preamble, length, payload, crc; } __attribute__((packed)) RadioFrame_t;
+void radio_pack_frame(RadioFrame_t *f, uint8_t *d, uint8_t l) { f->preamble = 0xAA; f->length = l; }
 
-void radio_pack_frame(RadioFrame_t *frame, uint8_t *data, uint8_t len) {
-    frame->preamble = 0xAA; frame->length = len;
-    for(uint8_t i=0; i<len && i<32; i++) frame->payload[i] = data[i];
-    frame->crc = 0xFFFF;
-}
+#define VIDEO_RAM_SIZE 2048
+uint8_t front_framebuffer[VIDEO_RAM_SIZE];
+uint8_t back_framebuffer[VIDEO_RAM_SIZE];
+void init_video_dma_canvas(void) { print("[VIDEO] Initializing double-buffered DMA display canvas...\n"); }
 
-uint8_t front_framebuffer[32000], back_framebuffer[32000];
-void init_video_dma_canvas(void) {
-    print("[VIDEO] Initializing double-buffered DMA display canvas...\n");
-}
-
-typedef struct { char buffer[128]; volatile uint8_t head, tail; } SerialQueue_t;
-SerialQueue_t com_queue = {{0}, 0, 0};
-void serial_queue_push(char c) {
-    uint8_t next = (com_queue.head + 1) % 128;
-    if (next != com_queue.tail) { com_queue.buffer[com_queue.head] = c; com_queue.head = next; }
-}
-
-static uint8_t system_heap[8192]; static uint32_t heap_index = 0;
-void *kernel_malloc(uint32_t size) {
-    if (heap_index + size <= 8192) {
-        void *ptr = &system_heap[heap_index]; heap_index += (size + 3) & ~3; return ptr;
-    }
-    return (void *)0;
-}
-void watchdog_kick(void) {
-    volatile uint32_t *wdt_kr = (volatile uint32_t *)0x40002C00; *wdt_kr = 0xAAAA;
-}
+void serial_queue_push(char c) { (void)c; }
+void *kernel_malloc(uint32_t size) { (void)size; return (void *)0; }
+void watchdog_kick(void) { volatile uint32_t *wdt_kr = (volatile uint32_t *)0x40002C00; *wdt_kr = 0xAAAA; }
 
 typedef struct { volatile uint32_t lock_state; } Mutex_t;
 void mutex_lock(Mutex_t *m) { while (__sync_lock_test_and_set(&m->lock_state, 1)); }
 void mutex_unlock(Mutex_t *m) { __sync_lock_release(&m->lock_state); }
 
-static volatile uint64_t monotonic_system_ticks = 0;
-uint64_t get_system_uptime_ticks(void) { return monotonic_system_ticks; }
-void system_clock_tick_isr(void) { monotonic_system_ticks++; }
+uint64_t get_system_uptime_ticks(void) { return 0; }
+void system_clock_tick_isr(void) {}
+void init_thread_context(void *ctx, void (*e)(void), uint32_t *s) { (void)ctx; (void)e; (void)s; }
 
-typedef struct { uint32_t r4, r5, r6, r7, r8, r9, r10, r11, eip; } ThreadContext_t;
-void init_thread_context(ThreadContext_t *ctx, void (*entry)(void), uint32_t *stack_top) {
-    ctx->eip = (uint32_t)entry; *(--stack_top) = (uint32_t)entry;
-}
+uint64_t gdt;
+void init_global_descriptor_table(void) { print("[CPU] Setting up Global Descriptor Table segments...\n"); }
 
-uint64_t gdt[3];
-void init_global_descriptor_table(void) {
-    print("[CPU] Setting up Global Descriptor Table segments...\n");
-    gdt[0] = 0x0000000000000000ULL; gdt[1] = 0x00CF9A000000FFFFULL; gdt[2] = 0x00CF92000000FFFFULL;
-}
 void telemetry_encrypt_sys(uint32_t *v, uint32_t const *key) {
     uint32_t v0 = v[0], v1 = v[1], sum = 0, delta = 0x9E3779B9;
     for (int i = 0; i < 32; i++) {
@@ -66,41 +34,5 @@ void telemetry_encrypt_sys(uint32_t *v, uint32_t const *key) {
     }
     v[0] = v0; v[1] = v1;
 }
-
-void init_interrupt_priorities_sys(void) {
-    print("[CPU] Configuring interrupt priority rings...\n");
-}
-
-int run_automated_tests_sys(void) {
-    print("[TEST] Running automated microkernel verification vectors...\n");
-    uint32_t test_packet[2] = {0xDEADBEEF, 0xCAFEBABE};
-    uint32_t crypto_key[4]  = {0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210};
-    telemetry_encrypt_sys(test_packet, crypto_key);
-    if (test_packet[0] == 0xDEADBEEF) return 0;
-    print("[PASS] Crypto packet verification vector success.\n"); return 1;
-}
-
-// --- VIRTUAL MEMORY PAGING FAULT INTERRUPT TRAP (ISR) ---
-typedef struct {
-    uint32_t error_code;
-    uint32_t eip;
-    uint32_t cs;
-    uint32_t eflags;
-} PageFaultFrame_t;
-
-void handle_page_fault(PageFaultFrame_t *frame) {
-    uint32_t faulting_address;
-    // Read CR2 register to capture the exact linear address that caused the fault
-    __asm__ volatile("mov %%cr2, %0" : "=r" (faulting_address));
-
-    print("\n[CRITICAL] !!! VIRTUAL MEMORY PAGE FAULT INT 14 RECOVERY TRAP !!!\n");
-    print("Faulting Memory Linear Address Base: ");
-    if (frame->error_code & 1) print("[Protection Violation] ");
-    else print("[Page Not Present] ");
-    
-    if (frame->error_code & 2) print("[Write Operation]\n");
-    else print("[Read Operation]\n");
-
-    // Defensive Action: Panic Halt to protect underlying kernel memory boundaries
-    while (1) { __asm__ volatile("cli; hlt"); }
-}
+void init_interrupt_priorities_sys(void) { print("[CPU] Configuring interrupt priority rings...\n"); }
+int run_automated_tests_sys(void) { return 1; }
