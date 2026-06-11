@@ -49,3 +49,10 @@ void* malloc(unsigned int size) {
 	}
 	return (void*)alloc_address;
 }
+
+void free(void* ptr, unsigned int size) {
+	unsigned int addr = (unsigned int)ptr;
+	if (addr + size == heap_current) {
+		heap_current = addr;
+	}
+}

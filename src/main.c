@@ -23,19 +23,6 @@ void print_uptime() {
 	while(i > 0) { print_char(buf[--i]); }
 	print("sn");
 }
-void print_uptime() {
-	unsigned long seconds = timer_ticks / 10000;
-	print("System Uptime: ");
-	char buf[16];
-	int i = 0;
-	if(seconds == 0) { print("0sn"); return; }
-	while(seconds > 0) {
-		buf[i++] = '0' + (seconds % 10);
-		seconds /= 10;
-	}
-	while(i > 0) { print_char(buf[--i]); }
-	print("sn");
-}
 void process_command() {
 	print("n");
 	if (cmd_buffer[0] == 'r' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'b' \&\& cmd_buffer[3] == 'o' \&\& cmd_buffer[4] == 'o' \&\& cmd_buffer[5] == 't') {
@@ -48,13 +35,15 @@ void process_command() {
 		print("-> ");
 	} else if (cmd_buffer[0] == 'm' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'm') {
 		extern void* malloc(unsigned int size);
+		extern void free(void* ptr, unsigned int size);
 		void* block = malloc(4096);
-		print("Allocated 4KB Block At Address: 0x");
+		print("Heap Allocated/Freed 4KB Block At: 0x");
 		unsigned int addr = (unsigned int)block;
 		char buf[16];
 		int i = 0;
 		while(addr > 0) { unsigned int rem = addr % 16; if(rem < 10) buf[i++] = '0' + rem; else buf[i++] = 'A' + (rem - 10); addr /= 16; }
 		while(i > 0) { print_char(buf[--i]); }
+		free(block, 4096);
 		print("n-> ");
 	} else {
 		print("Unknown command.n-> ");
