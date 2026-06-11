@@ -1,7 +1,7 @@
 CC = gcc
 LD = ld
 CFLAGS = -m32 -ffreestanding -Os -Wall -Wextra -ffunction-sections -fdata-sections
-LDFLAGS = -m elf_i386 -nostdlib -Xlinker --gc-sections -T linker.ld
+LDFLAGS = -m elf_i386 -nostdlib --gc-sections -T linker.ld
 
 SRC = $(wildcard src/*.c)
 OBJ = $(SRC:.c=.o)

@@ -1,25 +1,24 @@
 // Ziggy OS Free-Mode Bare-Metal Kernel Node
-// Hardcoded raw pointers for freestanding arm-none-eabi compilation
+// Section: .rodata static allocation bypasses heap pipeline
 
-pub const HistoricalRecord = extern struct {
-    item_id: [*:0]const u8,
-    title: [*:0]const u8,
-    author: [*:0]const u8,
-    owner: [*:0]const u8,
-    address: [*:0]const u8,
-    postal_code: [*:0]const u8,
+pub const HistoricalRecord = struct {
+    item_id: []const u8,
+    title: []const u8,
+    author: []const u8,
+    owner: []const u8,
+    address: []const u8,
+    postal_code: []const u8,
     reserve_nzd: u32,
     latitude_fixed: i32,
     longitude_fixed: i32,
-    incident_date: [*:0]const u8,
-    flight_path_convent: [*:0]const u8,
-    flight_path_cemetery: [*:0]const u8,
-    flight_path_exit: [*:0]const u8,
+    incident_date: []const u8,
+    flight_path_convent: []const u8,
+    flight_path_cemetery: []const u8,
+    flight_path_exit: []const u8,
     color_profile_hex: u32,
 };
 
-// Export to linker symbol space for arm-none-eabi-ld reference
-export const wingspread_archive linksection(".rodata") = HistoricalRecord{
+pub const wingspread_archive linksection(".rodata") = HistoricalRecord{
     .item_id = "wingspread_1941_archive_001",
     .title = "Wingspread: The Pioneering of Aviation in New Zealand",
     .author = "Leo White",
@@ -33,5 +32,5 @@ export const wingspread_archive linksection(".rodata") = HistoricalRecord{
     .flight_path_convent = "Home of the Good Shepherd (Waikowhai Rd, Mt Roskill)",
     .flight_path_cemetery = "Hillsborough Cemetery",
     .flight_path_exit = "Manukau Heads",
-    .color_profile_hex = 0x0011E6D4,
+    .color_profile_hex = 0x0011E6D4, // Electric Teal Custom Layer Index
 };
