@@ -30,6 +30,9 @@ void process_command() {
 	if (cmd_buffer[0] == 'r' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'b' \&\& cmd_buffer[3] == 'o' \&\& cmd_buffer[4] == 'o' \&\& cmd_buffer[5] == 't') {
 		print("Rebooting...n");
 		outb(0x64, 0xFE);
+	} else if (cmd_buffer[0] == 's' && cmd_buffer[1] == 'h') {
+		outw(0xB004, 0x2000); outw(0x604, 0x2000);
+		while(1);
 	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
 		shell_clear();
 	} else if (cmd_buffer[0] == 'u' \&\& cmd_buffer[1] == 'p' \&\& cmd_buffer[2] == 't' \&\& cmd_buffer[3] == 'i' \&\& cmd_buffer[4] == 'm' \&\& cmd_buffer[5] == 'e') {
