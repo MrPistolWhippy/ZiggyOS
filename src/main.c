@@ -14,6 +14,8 @@ void process_command() {
 		outb(0x64, 0xFE);
 	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
 		shell_clear();
+	} else if (cmd_buffer[0] == 'h' \&\& cmd_buffer[1] == 'e' \&\& cmd_buffer[2] == 'l' \&\& cmd_buffer[3] == 'p') {
+		print("ZiggyOS Commands:n  help   - Show this listn  clear  - Wipe screenn  reboot - Restart systemn-> ");
 	} else {
 		print("Unknown command.n-> ");
 	}
