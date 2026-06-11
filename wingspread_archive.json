@@ -1,0 +1,61 @@
+{
+  "item_id": "wingspread_1941_archive_001",
+  "catalog_details": {
+    "title": "Wingspread: The Pioneering of Aviation in New Zealand",
+    "author": "Leo White",
+    "publisher": "Unity Press Ltd., Auckland, NZ",
+    "publication_year": 1941,
+    "edition": "First Edition",
+    "binding": "Green cloth hardcover",
+    "illustrations": "Monochrome photo plates"
+  },
+  "provenance_data": {
+    "inscribed_name": "Peter Dann King",
+    "historic_address": "76 Prospect Terrace, Mt Eden, Auckland",
+    "postal_district_code": "S.2 (Vintage Auckland Sorting Code)",
+    "geospatial_relevance": "Property constructed c. 1900; matches the geographic flight path of the 1942 Japanese overflight mentioned in the ephemera."
+  },
+  "associated_ephemera": [
+    {
+      "ephemera_type": "Newspaper Clipping (Bookmark 1)",
+      "subject": "Port of Auckland and Onehunga Coastal Shipping Timetable",
+      "key_entities_mentioned": [
+        "Union Steam Ship Company (Colliers: Omana, Karepo)",
+        "Northern Steamship Company (Vessels: Hauturu, Ranginui, Clansman)"
+      ],
+      "historical_context": "Pre-lockdown shipping notice. Detailed commercial timetables like this were banned shortly after by the Directorate of Publicity under wartime censorship to hide ship movements from enemy submarines."
+    },
+    {
+      "ephemera_type": "Newspaper Clipping (Bookmark 2)",
+      "subject": "Japanese Reconnaissance Overflight Eyewitness Report",
+      "eyewitness": "Mr. E. Berg (Dominion Road Extension, Mt Eden area)",
+      "incident_date": "March 13, 1942",
+      "historical_incident": "Imperial Japanese Navy pilot Nobuo Fujita launched a Yokosuka E14Y 'Glen' floatplane from submarine I-25 in the Hauraki Gulf, flying over Auckland undetected by military defenses.",
+      "flight_path_landmarks_in_text": [
+        "Home of the Good Shepherd (Waikowhai Road, Mt Roskill)",
+        "Hillsborough Cemetery",
+        "Manukau Heads"
+      ],
+      "propaganda_element": "The clipping states the enemy plane was 'detected and pursued' by an aircraft from Whenuapai. Historical records show Auckland air defenses were caught completely off guard; the pursuit narrative was fabricated by censors to prevent public panic."
+    }
+  ],
+  "market_valuation_strategy": {
+    "estimated_base_book_value_nzd": 30.00,
+    "estimated_archival_bundle_value_nzd": 180.00,
+    "target_valuation_range_nzd": "180.00 - 300.00+",
+    "recommended_auction_start_nzd": 75.00,
+    "recommended_reserve_price_nzd": 150.00,
+    "target_listing_categories": [
+      "Antiques & Collectables > Militaria > WWII (1939-45)",
+      "Books > Non-Fiction > History > New Zealand"
+    ],
+    "high_intent_keywords": [
+      "WWII Auckland Archive",
+      "1942 Japanese Raid",
+      "Nobuo Fujita",
+      "Mt Eden Local History",
+      "RNZAF Wartime Propaganda",
+      "Leo White First Edition"
+    ]
+  }
+}
