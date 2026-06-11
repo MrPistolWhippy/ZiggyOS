@@ -45,6 +45,12 @@ void process_command() {
 		print("Dumping Core GDT Memory Matrix:n");
 		extern struct gdt_entry gdt;
 		mmu_hex_dump(&gdt);
+	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
+		extern void app_matrix_screensaver();
+		app_matrix_screensaver();
+	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
+		extern void app_print_system_info();
+		app_print_system_info();
 		print("Sounding hardware speaker...n");
 		mmu_trigger_beep();
 	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
@@ -52,6 +58,12 @@ void process_command() {
 		print("Dumping Core GDT Memory Matrix:n");
 		extern struct gdt_entry gdt;
 		mmu_hex_dump(&gdt);
+	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
+		extern void app_matrix_screensaver();
+		app_matrix_screensaver();
+	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
+		extern void app_print_system_info();
+		app_print_system_info();
 		ipc_send("Hello from Task 0!");
 		ipc_receive();
 	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
@@ -61,6 +73,12 @@ void process_command() {
 		print("Dumping Core GDT Memory Matrix:n");
 		extern struct gdt_entry gdt;
 		mmu_hex_dump(&gdt);
+	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
+		extern void app_matrix_screensaver();
+		app_matrix_screensaver();
+	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
+		extern void app_print_system_info();
+		app_print_system_info();
 		print("Sounding hardware speaker...n");
 		mmu_trigger_beep();
 	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
@@ -68,6 +86,12 @@ void process_command() {
 		print("Dumping Core GDT Memory Matrix:n");
 		extern struct gdt_entry gdt;
 		mmu_hex_dump(&gdt);
+	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
+		extern void app_matrix_screensaver();
+		app_matrix_screensaver();
+	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
+		extern void app_print_system_info();
+		app_print_system_info();
 		print_process_status();
 	} else if (cmd_buffer[0] == 'm' && cmd_buffer[1] == 's' && cmd_buffer[2] == 'g') {
 		extern void ipc_send(const char* m);
@@ -79,6 +103,12 @@ void process_command() {
 		print("Dumping Core GDT Memory Matrix:n");
 		extern struct gdt_entry gdt;
 		mmu_hex_dump(&gdt);
+	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
+		extern void app_matrix_screensaver();
+		app_matrix_screensaver();
+	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
+		extern void app_print_system_info();
+		app_print_system_info();
 		print("Sounding hardware speaker...n");
 		mmu_trigger_beep();
 	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
@@ -86,6 +116,12 @@ void process_command() {
 		print("Dumping Core GDT Memory Matrix:n");
 		extern struct gdt_entry gdt;
 		mmu_hex_dump(&gdt);
+	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
+		extern void app_matrix_screensaver();
+		app_matrix_screensaver();
+	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
+		extern void app_print_system_info();
+		app_print_system_info();
 		ipc_send("Hello from Task 0!");
 		ipc_receive();
 	} else if (cmd_buffer == 'b' && cmd_buffer == 'e' && cmd_buffer == 'e' && cmd_buffer == 'p') {
@@ -95,6 +131,12 @@ void process_command() {
 		print("Dumping Core GDT Memory Matrix:n");
 		extern struct gdt_entry gdt;
 		mmu_hex_dump(&gdt);
+	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
+		extern void app_matrix_screensaver();
+		app_matrix_screensaver();
+	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
+		extern void app_print_system_info();
+		app_print_system_info();
 		print("Sounding hardware speaker...n");
 		mmu_trigger_beep();
 	} else if (cmd_buffer == 'x' && cmd_buffer == 'x' && cmd_buffer == 'd') {
@@ -102,6 +144,12 @@ void process_command() {
 		print("Dumping Core GDT Memory Matrix:n");
 		extern struct gdt_entry gdt;
 		mmu_hex_dump(&gdt);
+	} else if (cmd_buffer == 'm' && cmd_buffer == 'a') {
+		extern void app_matrix_screensaver();
+		app_matrix_screensaver();
+	} else if (cmd_buffer == 'i' && cmd_buffer == 'n') {
+		extern void app_print_system_info();
+		app_print_system_info();
 		print("-> ");
 	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
 		shell_clear();
@@ -120,6 +168,10 @@ void process_command() {
 		while(i > 0) { print_char(buf[--i]); }
 		free(block, 4096);
 		print("n-> ");
+	} else {
+		print("} else if (cmd_buffer == 'c' && cmd_buffer == 'a' && cmd_buffer == 'l') {
+		extern void app_run_calculator(const char* e);
+		app_run_calculator(&cmd_buffer);
 	} else {
 		print("Unknown command.n-> ");
 	}
