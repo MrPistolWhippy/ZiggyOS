@@ -75,6 +75,10 @@ void run_userland_shell(void) {
 void kernel_main(void) {
     extern void init_global_descriptor_table(void);
     init_global_descriptor_table();
+    extern void activate_tss(void);
+    activate_tss();
+    void* test_mem = kmalloc(64);
+    if(test_mem) print("MALLOC: Initialized 128KB heap. 64-byte block test footprint OK!n");
     extern void init_mmu(void);
     init_mmu();
     void init_pit_timer(uint32_t frequency);
@@ -84,6 +88,10 @@ void kernel_main(void) {
     print("==================================================\n");
 
     init_global_descriptor_table();
+    extern void activate_tss(void);
+    activate_tss();
+    void* test_mem = kmalloc(64);
+    if(test_mem) print("MALLOC: Initialized 128KB heap. 64-byte block test footprint OK!n");
     init_syscall_vector_gate();
     init_fat_filesystem();
     extern void init_flash_persistence_driver(void);
@@ -224,4 +232,28 @@ void pit_isr_handler(void) {
     
     // Acknowledge the interrupt by flashing an EOI token to the master PIC (Port 0x20)
     asm volatile("outb %%al, %%dx" : : "a"((uint8_t)0x20), "d"((uint16_t)0x20));
+}
+
+// Dynamic Kernel Memory Pool Heap Architecture
+#define HEAP_SIZE_BYTES (128 * 1024)
+static uint8_t kernel_heap_pool[HEAP_SIZE_BYTES];
+static uint32_t heap_bump_pointer = 0;
+
+void* kmalloc(uint32_t size) {
+    // Round allocation size up to stay aligned to 4-byte boundaries
+    size = (size + 3) & ~3;
+
+    if (heap_bump_pointer + size > HEAP_SIZE_BYTES) {
+        print("MALLOC ERROR: Kernel Out Of Memory! Heap allocation pool exhausted.n");
+        return (void*)0;
+    }
+
+    void* allocated_ptr = (void*)&kernel_heap_pool[heap_bump_pointer];
+    heap_bump_pointer += size;
+    return allocated_ptr;
+}
+
+void kfree(void* ptr) {
+    // Bump allocators do not support free operations natively
+    (void)ptr;
 }
