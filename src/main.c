@@ -5,7 +5,8 @@ char scancode_to_ascii(unsigned char scancode);
 void print(const char* str);
 void print_char(char c);
 void shell_backspace();
-void shell_clear();
+void init_gdt(); shell_clear(); print("GDT Initialized.n");
+void init_gdt();
 unsigned long timer_ticks = 0;
 char cmd_buffer[256];
 int cmd_index = 0;
@@ -28,7 +29,7 @@ void process_command() {
 		print("Rebooting...n");
 		outb(0x64, 0xFE);
 	} else if (cmd_buffer[0] == 'c' \&\& cmd_buffer[1] == 'l' \&\& cmd_buffer[2] == 'e' \&\& cmd_buffer[3] == 'a' \&\& cmd_buffer[4] == 'r') {
-		shell_clear();
+		init_gdt(); shell_clear(); print("GDT Initialized.n");
 	} else if (cmd_buffer[0] == 'u' \&\& cmd_buffer[1] == 'p' \&\& cmd_buffer[2] == 't' \&\& cmd_buffer[3] == 'i' \&\& cmd_buffer[4] == 'm' \&\& cmd_buffer[5] == 'e') {
 		print_uptime();
 		print("-> ");
@@ -37,7 +38,7 @@ void process_command() {
 	}
 }
 void kernel_main() {
-	shell_clear();
+	init_gdt(); shell_clear(); print("GDT Initialized.n");
 	print("ZiggyOS Async Ticker Shelln-> ");
 	while(1) {
 		timer_ticks++;
