@@ -27,5 +27,5 @@ jobs:
           gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/app_upgrade_layer.c -o src/app_upgrade_layer.o
           gcc -m32 -ffreestanding -O2 -Wall -Wextra -c src/linker_fallbacks.c -o src/linker_fallbacks.o
           
-          # Link all compiled components
-          ld -m elf_i386 -T src/linker.ld -o os-kernel.bin src/app_radio_telemetry.o src/app_stego_panic.o src/app_upgrade_layer.o src/linker_fallbacks.o src/main.o src/mmu.o src/uart_driver.o src/vector_table.o
+          # Link all compiled components with the RWX warning suppression flag
+          ld -m elf_i386 --no-warn-rwx-segments -T src/linker.ld -o os-kernel.bin src/app_radio_telemetry.o src/app_stego_panic.o src/app_upgrade_layer.o src/linker_fallbacks.o src/main.o src/mmu.o src/uart_driver.o src/vector_table.o
