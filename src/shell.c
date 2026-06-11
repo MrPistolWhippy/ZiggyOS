@@ -9,3 +9,10 @@ void shell_print_color(const char* str, char color) {
         }
     }
 }
+
+void shell_backspace() {
+    if (cursor_pos > 0) {
+        cursor_pos--; // Move cursor back one step
+        video_memory[cursor_pos] = (0x0F << 8) | ' '; // Clear character with blank space
+    }
+}
