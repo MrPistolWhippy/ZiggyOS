@@ -53,7 +53,7 @@ void Reset_Handler(void) {
     
     STK_LOAD = 16000 - 1;
     STK_CTRL = 0x07;
-    __asm__ volatile ("cpsie i");
+    __asm__ volatile ("sti");
     task1();
 }
 
