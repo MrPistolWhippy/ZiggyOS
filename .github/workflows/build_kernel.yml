@@ -19,29 +19,44 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-multilib build-essential nasm
 
-    - name: Clean and Prepare Directory Tree
-      run: |
-        # Clear out any stale artifacts before setting up our workspace files
-        make clean || true
-        mkdir -p src
-
     - name: Assemble Cloud Compilation Workspace
       run: |
-        # Pull clean source code elements natively out of the tracking folder
+        # Recreate the target source directory from scratch
+        rm -rf src
+        mkdir -p src
+        
+        # Pull your real original source files into focus
         if [ -d "ishfiles/ziggy-kernel-os/src" ]; then
           cp -r ishfiles/ziggy-kernel-os/src/* src/ || true
         fi
         
-        # Ensure the empty input/output wrapper header is in position
+        # Satisfy the empty header file dependency natively
         touch src/io.h
         
-        # Ensure any stale pre-compiled .o objects are swept out so make compiles fresh
+        # Clean up any residual pre-compiled objects from the copy
         rm -f src/*.o *.o
         
-        echo "=== Verifying Pristine Uncompiled Source Files ==="
+        echo "=== Verifying Available Source Files to Build ==="
         ls -la src/
 
-    - name: Compile and Link Kernel Image Targets
+    - name: Generate Dynamic Makefile and Build
       run: |
-        # Explicitly build our target architecture binary image
+        # Dynamically build a custom Makefile targeting all available .c files
+        echo "CC = gcc" > Makefile
+        echo "CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra" >> Makefile
+        echo "SRCS = \$(wildcard src/*.c)" >> Makefile
+        echo "OBJS = \$(SRCS:.c=.o)" >> Makefile
+        echo "" >> Makefile
+        echo "all: os-kernel.bin" >> Makefile
+        echo "" >> Makefile
+        echo "%.o: %.c" >> Makefile
+        printf "\t\$(CC) \$(CFLAGS) -c \$< -o \$@\n" >> Makefile
+        echo "" >> Makefile
+        echo "os-kernel.bin: \$(OBJS)" >> Makefile
+        printf "\tld -m elf_i386 -T linker.ld -o os-kernel.bin \$(OBJS)\n" >> Makefile
+        
+        echo "=== Generated Makefile ==="
+        cat Makefile
+        
+        # Compile and link everything natively
         make all
