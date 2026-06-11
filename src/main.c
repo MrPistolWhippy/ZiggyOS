@@ -167,3 +167,19 @@ void hex_dump(const uint8_t* data, uint32_t size) {
         print("\n");
     }
 }
+
+// Dynamic Workflow Multi-System Architecture Sync Fallbacks
+static uint8_t current_vga_color = 0x07;
+void set_text_color(uint8_t fg, uint8_t bg) {
+    current_vga_color = fg | (bg << 4);
+}
+
+void sys_yield(void) {
+    // Cooperative multi-task scheduler context matrix switch stub
+    asm volatile("nop");
+}
+
+int flash_read_sector(uint32_t sector, uint8_t* buffer) {
+    (void)sector; (void)buffer;
+    return 0;
+}
