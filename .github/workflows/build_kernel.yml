@@ -19,24 +19,29 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-multilib build-essential nasm
 
+    - name: Clean and Prepare Directory Tree
+      run: |
+        # Clear out any stale artifacts before setting up our workspace files
+        make clean || true
+        mkdir -p src
+
     - name: Assemble Cloud Compilation Workspace
       run: |
-        # Ensure target compilation directory exists
-        mkdir -p src
-        
-        # If files are in the backup repository track, pull them directly into focus
+        # Pull clean source code elements natively out of the tracking folder
         if [ -d "ishfiles/ziggy-kernel-os/src" ]; then
           cp -r ishfiles/ziggy-kernel-os/src/* src/ || true
         fi
         
-        # Satisfy the empty header file dependency natively
+        # Ensure the empty input/output wrapper header is in position
         touch src/io.h
         
-        # Verify the cloud workspace files are in position
-        echo "=== Verifying Source Tree Files ==="
+        # Ensure any stale pre-compiled .o objects are swept out so make compiles fresh
+        rm -f src/*.o *.o
+        
+        echo "=== Verifying Pristine Uncompiled Source Files ==="
         ls -la src/
 
     - name: Compile and Link Kernel Image Targets
       run: |
-        make clean || true
+        # Explicitly build our target architecture binary image
         make all
