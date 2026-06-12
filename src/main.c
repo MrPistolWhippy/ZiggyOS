@@ -277,4 +277,4 @@ void kfree(void* ptr) {
     // Bump allocators do not support free operations natively
     (void)ptr;
 }
-uint32_t system_jiffies_ticks = 0;
+void app_diag_main(void){}
