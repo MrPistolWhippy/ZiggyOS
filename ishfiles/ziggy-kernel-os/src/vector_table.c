@@ -1,3 +1,4 @@
+extern void print(const char* s);
 #include <stdint.h>
 void Reset_Handler(void); void SysTick_Handler(void); void HardFault_Handler(void);
 extern void PendSV_Handler(void); extern void UART0_Handler(void);
