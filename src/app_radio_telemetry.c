@@ -1,10 +1,10 @@
 #include <stdint.h>
 
-// Mock definitions for the hardware platform
 extern void uart_putc(char c);
+// Reference the authentic master hardware execution clock ticks from vector_table.c
+extern volatile uint64_t system_jiffies_ticks;
 
 void app_radio_telemetry_init(void) {
-    // Initialize radio tracking frequency loops
     char *init_msg = "[RADIO] Initializing Telemetry Stream...\n";
     while (*init_msg) {
         uart_putc(*init_msg++);
@@ -12,11 +12,11 @@ void app_radio_telemetry_init(void) {
 }
 
 void app_radio_telemetry_tick(void) {
-    // Core operational background beacon tick
-    static uint32_t heartbeat_counter = 0;
-    heartbeat_counter++;
+    static uint64_t last_sync_tick = 0;
     
-    if ((heartbeat_counter % 100000) == 0) {
-        uart_putc('.'); // Output telemetry tracking heartbeat signal
+    // Check if 100 hardware clock ticks (1 full second) have elapsed cleanly
+    if (system_jiffies_ticks - last_sync_tick >= 100) {
+        last_sync_tick = system_jiffies_ticks;
+        uart_putc('~'); // Output a wave character indicating an active radio telemetry broadcast beacon
     }
 }

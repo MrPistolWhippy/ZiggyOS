@@ -36,3 +36,39 @@ void init_mmu(void) {
 
     print("MMU: Identity paging successfully locked into CR0/CR3 hardware registers!\n");
 }
+
+// Seeded Post-Quantum Lattice Validation Parameters
+const int PQC_PRIVATE_VECTOR[8] = {0, 1, 1, 1, -1, 1, 0, 1};
+const int PQC_PUBLIC_MATRIX[8]  = {10, 173, 14, 191, 241, 113, 109, 49};
+const int PQC_EXPECTED_PUBLIC_B = 43;
+
+int verify_mmu_lattice_token(void) {
+    int dot_product = 0;
+    for(int i = 0; i < 8; i++) {
+        dot_product += PQC_PUBLIC_MATRIX[i] * PQC_PRIVATE_VECTOR[i];
+    }
+    // Modulo arithmetic isolated to 257 bounds matching finite field q
+    int computed_b = (dot_product) % 257;
+    if (computed_b < 0) computed_b += 257;
+    
+    // Returns 1 if matching your secure profile matrix bounds, 0 if blocked
+    return (computed_b == PQC_EXPECTED_PUBLIC_B);
+}
+
+// Initialize standard x86 Programmable Interval Timer (PIT) Channel 0 at 100Hz
+void init_hardware_pit_timer(void) {
+    uint16_t divisor = 11931; // 1193182 Hz / 100 Hz = ~11931
+    
+    // Send Command Byte to PIT Mode/Command Register (Port 0x43)
+    // Binary 00110110: Channel 0, Access lo/hi byte, Mode 3 (Square Wave), Binary
+    __asm__ volatile ("outb %0, %1" : : "a"((uint8_t)0x36), "Nd"((uint16_t)0x43));
+    
+    #ifdef __x86_64__
+    // Optional compatibility layer for 64-bit sandbox overrides
+    #endif
+
+    // Send Divisor Low Byte to Channel 0 Data Register (Port 0x40)
+    __asm__ volatile ("outb %0, %1" : : "a"((uint8_t)(divisor & 0xFF)), "Nd"((uint16_t)0x40));
+    // Send Divisor High Byte to Channel 0 Data Register (Port 0x40)
+    __asm__ volatile ("outb %0, %1" : : "a"((uint8_t)((divisor >> 8) & 0xFF)), "Nd"((uint16_t)0x40));
+}

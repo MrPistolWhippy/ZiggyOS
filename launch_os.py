@@ -18,7 +18,7 @@ def launch_kernel():
     
     # Use native Linux system tools instead of slow memory-heavy loops
     # This prevents iSH from crashing instantly
-    os.system("strings ~/z_os/iso_root/boot/ziggyos.bin | grep -E 'Active|Stable|Enforced|ZiggyOS'")
+    os.system("strings ~/z_os/iso_root/boot/ziggyos.bin | grep -E 'Active|Stable|Enforced|ZiggyOS|PANIC|SUCCESS|COMPROMISED|PANIC|SUCCESS|COMPROMISED'")
     
     print("\n--------------------------------------------------")
     print("[+] CPU entered infinite halt state loop safely.")

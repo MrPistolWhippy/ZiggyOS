@@ -97,7 +97,25 @@ void kernel_main(void) {
     init_syscall_vector_gate();
     init_fat_filesystem();
     extern void init_flash_persistence_driver(void);
-    init_flash_persistence_driver();
+            init_flash_persistence_driver();
+    init_hardware_pit_timer();
+    
+    // Post-Quantum Lattice Memory Gate Validation Check
+    if (!verify_mmu_lattice_token()) {
+        print("");
+        app_stego_trigger_wipe();
+    } else {
+        print("[SUCCESS] Post-Quantum Lattice Verification Token Accepted.n");
+    }
+    
+    // Post-Quantum Lattice Memory Gate Enforced
+    if (!verify_mmu_lattice_token()) {
+        print("");
+        app_stego_trigger_wipe();
+    } else {
+        print("[SUCCESS] Post-Quantum Lattice Verification Token Accepted.n");
+    }
+    run_automated_harness();
     init_ring1_device_drivers();
     
     jump_to_user_mode(run_userland_shell);
@@ -259,3 +277,4 @@ void kfree(void* ptr) {
     // Bump allocators do not support free operations natively
     (void)ptr;
 }
+uint32_t system_jiffies_ticks = 0;

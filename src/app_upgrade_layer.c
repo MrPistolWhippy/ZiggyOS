@@ -9,16 +9,6 @@ extern volatile uint64_t system_jiffies_ticks;
 static uint8_t kernel_heap[HEAP_SIZE];
 static size_t heap_offset = 0;
 
-void* kmalloc(uint32_t size) {
-    // Round up allocation size to align on 4-byte hardware boundaries
-    size = (size + 3) & ~3;
-    if (heap_offset + size > HEAP_SIZE) {
-        return NULL; // Out of heap space memory exception
-    }
-    void* ptr = &kernel_heap[heap_offset];
-    heap_offset += size;
-    return ptr;
-}
 
 // --- Subsystem 2: High-Efficiency Telemetry Bitmask Compressor ---
 void app_compress_and_broadcast_telemetry(void) {

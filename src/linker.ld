@@ -9,6 +9,7 @@ PHDRS
 SECTIONS
 {
     . = 0x100000;
+    MEMORY { RAM (rwx) : ORIGIN = 0x100000, LENGTH = 4M }
 
     .text : {
         ALIGN(4096);
