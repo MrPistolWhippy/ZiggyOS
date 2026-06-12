@@ -1,73 +1,49 @@
 #include <stdint.h>
+#include <stddef.h>
 
-#define SECTOR_SIZE 512
-#define FAT12_MAX_FILES 4
+extern void uart_putc(char c);
+extern volatile uint64_t system_jiffies_ticks;
 
-typedef struct {
-    char name[8];
-    char ext[3];
-    uint32_t size;
-    uint32_t start_sector;
-} __attribute__((packed)) DirectoryEntry;
+// --- Subsystem 1: Freestanding 1KB Kernel Bump Allocator (kmalloc) ---
+#define HEAP_SIZE 1024
+static uint8_t kernel_heap[HEAP_SIZE];
+static size_t heap_offset = 0;
 
-// 1.44MB Virtual Floppy Storage Vector Simulation Matrix
-static uint8_t virtual_floppy_sectors[FAT12_MAX_FILES * SECTOR_SIZE] = {0};
-static DirectoryEntry root_dir[FAT12_MAX_FILES];
-
-extern void print(const char* text);
-extern void app_set_system_theme(char s);
-
-void init_fat12_storage(void) {
-    // File 1: Ground Station Configuration Metadata Profile
-    for(int i=0; i<8; i++) root_dir[0].name[i] = "CONFIG  "[i];
-    root_dir[0].size = 32;
-    root_dir[0].start_sector = 0;
-    
-    // Inject the tactical 144.777 telemetry target packet directly into file storage sector
-    const char* config_payload = "FREQ=144.777nNODE=AKL_RECONnSTATUS=LOCK";
-    for(int i=0; config_payload[i] != '0'; i++) {
-        virtual_floppy_sectors[i] = config_payload[i];
+void* kmalloc(uint32_t size) {
+    // Round up allocation size to align on 4-byte hardware boundaries
+    size = (size + 3) & ~3;
+    if (heap_offset + size > HEAP_SIZE) {
+        return NULL; // Out of heap space memory exception
     }
+    void* ptr = &kernel_heap[heap_offset];
+    heap_offset += size;
+    return ptr;
 }
 
-void app_fat12_cat(const char* filename) {
-    if (filename[0] == 'c') {
-        print("n--- Reading /CONFIG.TXT from FAT12 Sector 0 ---n");
-        print((const char*)virtual_floppy_sectors);
-        print("n---------------------------------------------n");
-    } else {
-        print("n[-] Error: File not found in FAT12 directory indexing.n");
-    }
-}
+// --- Subsystem 2: High-Efficiency Telemetry Bitmask Compressor ---
+void app_compress_and_broadcast_telemetry(void) {
+    // Dynamic allocation of a scratchpad packet buffer using our new kmalloc
+    uint8_t *packet = (uint8_t*)kmalloc(4);
+    if (!packet) return;
 
-// -------------------------------------------------------------
-// FEATURE 2: DIRECT HARDWARE VGA PORT ARCHITECTURE CONTROLLER
-// -------------------------------------------------------------
-void app_set_vga_color_scheme(char color_byte) {
-    // Hardware I/O ports for standard VGA Attribute and CRTC controllers
-    // In bare-metal x86, we write out to physical registers using instructions like outb
-    // For our sandboxed multi-arch tracking layer, we update the VGA status indicators
-    if (color_byte == 'm') {
-        print("n[VGA Controller]: Port 0x03C0 latched. Theme -> MATRIX GREENn");
-    } else if (color_byte == 'a') {
-        print("n[VGA Controller]: Port 0x03C0 latched. Theme -> RETRO AMBERn");
-    } else {
-        print("n[VGA Controller]: Port 0x03C0 reset to standard gray console profile.n");
-    }
-}
+    uint8_t lattice_token = 43; 
+    uint32_t ticks = (uint32_t)(system_jiffies_ticks & 0xFFFFF); // Clamp ticks to 20 bits
 
-// -------------------------------------------------------------
-// COMBINED FEATURE: LIVE TACTICAL RADIO DECODER ENGINE (144.777 MHz)
-// -------------------------------------------------------------
-void app_run_tactical_decoder(void) {
-    print("n==================================================n");
-    print("📡 TARGET ACQUIRED: MONITORING PACKET STREAM (144.777 MHz)n");
-    print("==================================================n");
-    
-    // Simulate interactive parsing of signal nodes matching Auckland track parameters
-    print("[DATA DECODER]: Tracking Vector Lock Stable.n");
-    print("  Latitude  : 36.8485 S (Auckland Grid Coordinate)n");
-    print("  Longitude : 174.7633 En");
-    print("  Telemetry : Tracking target wingspread_1941_archive_001n");
-    print("==================================================n");
+    // Bitmask Compression Layout (Total: 32 bits / 4 bytes):
+    // [ Bits 0-7: Lattice Token (8 bits) ] [ Bits 8-27: System Clock Ticks (20 bits) ] [ Bits 28-31: Padding/Flags (4 bits) ]
+    packet[0] = lattice_token;
+    packet[1] = (uint8_t)(ticks & 0xFF);
+    packet[2] = (uint8_t)((ticks >> 8) & 0xFF);
+    packet[3] = (uint8_t)(((ticks >> 16) & 0x0F) | 0xA0); // Lower 4 bits of tick remainder + 0xA marker flag
+
+    // Broadcast the compressed bitstream byte-by-byte natively over the MMIO serial line
+    uart_putc('[');
+    for (int i = 0; i < 4; i++) {
+        // Output as raw ASCII-shifted visual hex tokens for the current terminal view
+        char hex_high = ((packet[i] >> 4) & 0x0F) + 'A';
+        char hex_low = (packet[i] & 0x0F) + 'A';
+        uart_putc(hex_high);
+        uart_putc(hex_low);
+    }
+    uart_putc(']');
 }
