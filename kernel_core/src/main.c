@@ -113,3 +113,11 @@ if (cmd_index < 255) { cmd_buffer[cmd_index++] = ascii; print_char(ascii); }
 }
 }
 }
+
+atmospheric_payload_t pull_atmospheric_data(uint32_t ticks) {
+	atmospheric_payload_t p;
+	p.timestamp = ticks;
+	p.raw_temperature = (int32_t)ticks * 2;
+	p.raw_pressure = 101325;
+	return p;
+}

@@ -48,3 +48,9 @@ void mmu_hex_dump(void* start_addr);
 void init_ramfs();
 
 #endif
+
+typedef struct __attribute__((__packed__)) {
+	uint32_t timestamp;
+	int32_t raw_temperature;
+	uint32_t raw_pressure;
+} atmospheric_payload_t;

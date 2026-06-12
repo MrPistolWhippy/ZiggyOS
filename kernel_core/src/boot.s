@@ -23,3 +23,22 @@ _start:
 stack_bottom:
 .skip 16384
 stack_top:
+
+.global irq_timer_handler
+.extern schedule_preempt
+irq_timer_handler:
+	pusha
+	push %ds
+	push %es
+	mov $0x10, %ax
+	mov %ax, %ds
+	mov %ax, %es
+	push %esp
+	call schedule_preempt
+	mov %eax, %esp
+	pop %es
+	pop %ds
+	popa
+	mov $0x20, %al
+	out %al, $0x20
+	iret
