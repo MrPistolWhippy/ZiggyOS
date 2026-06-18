@@ -1,4 +1,22 @@
 #!/bin/bash
+echo -e "\033[1;33m[*] Deploying Mini Sim & HUD Suite...\033[0m"
+
+# 1. Mini Radio Wave IQ Stream Simulator Module
+cat << 'HW_SIM' > /root/modules/sdr_sim.py
+#!/usr/bin/env python3
+import time, secrets, os
+from datetime import datetime
+os.makedirs("/root/logs", exist_ok=True)
+try:
+    ts = datetime.now().strftime('%H:%M:%S')
+    with open("/root/logs/network_sniff.log", "a") as f:
+        f.write(f"[{ts}] RF_WAVE | RAW_HEX: 4745545F5A49474759_{secrets.token_hex(6).upper()} | IQ_BLOCK\n")
+except: pass
+HW_SIM
+
+# 2. Fully Upgraded Master Control HUD Panel Script
+cat << 'HW_HUD' > /root/bin/control_panel.sh
+#!/bin/bash
 mkdir -p /root/logs && touch /root/logs/network_sniff.log
 while true; do
     clear
@@ -23,3 +41,7 @@ while true; do
     echo -e "\033[38;5;198m============================================================\033[0m"
     sleep 2
 done
+HW_HUD
+
+chmod +x /root/modules/sdr_sim.py /root/bin/control_panel.sh
+echo -e "\033[1;32m[+] SUCCESS! Mini-HUD injected.\033[0m"
