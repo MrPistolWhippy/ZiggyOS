@@ -2,9 +2,10 @@
 B=(" " "▂" "▃" "▄" "▅" "▆" "▇" "█")
 g() {
     local o=""
-    # Universal POSIX/Alpine shell-safe pseudo-randomizer calculation loop
     for i in {1..12}; do
-        local r=$(awk 'BEGIN{srand(); print int(rand()*8)}')
+        # Use microsecond clock ticks to seed a flawless dynamic matrix wave
+        local seed=$(date +%N | tr -d '0\n')
+        local r=$(( (seed * i) % 8 ))
         o+="${B[$r]}"
     done
     echo -e "\033[1;32m${o:0:4}\033[1;33m${o:4:4}\033[1;31m${o:8:4}\033[0m"
@@ -23,5 +24,5 @@ while true; do
     echo -e "\033[1;33m📡 LIVE DATA LOGGING STREAM:\033[0m"
     tail -n 4 /root/logs/network_sniff.log 2>/dev/null || echo "  [-] No active streams."
     echo -e "\033[38;5;198m============================================================\033[0m"
-    sleep 1
+    sleep 0.5
 done
