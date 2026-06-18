@@ -2,7 +2,11 @@
 B=(" " "▂" "▃" "▄" "▅" "▆" "▇" "█")
 g() {
     local o=""
-    for i in {1..12}; do o+="${B[\$((RANDOM % 8))]}"; done
+    # Universal POSIX/Alpine shell-safe pseudo-randomizer calculation loop
+    for i in {1..12}; do
+        local r=$(awk 'BEGIN{srand(); print int(rand()*8)}')
+        o+="${B[$r]}"
+    done
     echo -e "\033[1;32m${o:0:4}\033[1;33m${o:4:4}\033[1;31m${o:8:4}\033[0m"
 }
 while true; do
