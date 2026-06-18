@@ -1,2 +1,11 @@
-.ash_history
-.git-credentials
+*.db
+*.img
+*.iso
+*.tar
+*.tgz
+*.hex
+logs/
+data/ledgers/
+!bin/
+!modules/
+!config/
