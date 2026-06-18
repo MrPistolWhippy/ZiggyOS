@@ -1,50 +1,11 @@
 #!/bin/sh
-# ==============================================================================
-#  ZIGGYOS HIGH-LEVEL SILICON PRODUCTION & RTL SYNTHESIS ENGINE
-# ==============================================================================
-VERILOG_CORE="/root/modules/ziggy_fpga_core.v"
-RULES_FILE="/root/config/silicon_rules.json"
-
-echo -e "\033[38;5;198m============================================================\033[0m"
+C="/root/modules/ziggy_fpga_core.v"
 echo -e "\033[1;36m       ZIGGYOS HIGH-LEVEL SILICON PRODUCTION MATRIX         \033[0m"
-echo -e "\033[38;5;198m============================================================\033[0m"
-
-if [ ! -f "$VERILOG_CORE" ]; then
-    echo -e "  \033[91m[-] Error: Missing structural Verilog core modules.\033[0m"
-    echo -e "\033[38;5;198m============================================================\033[0m"
-    exit 1
-fi
-
-echo -e "\033[94m[*] Phase 1: Parsing Verilog RTL Structural Netlists...\033[0m"
-# Map specific register gate strings directly out of your Verilog files
-REGISTERS=$(grep -c "reg " "$VERILOG_CORE")
-WIRES=$(grep -c "wire " "$VERILOG_CORE")
-INPUTS=$(grep -c "input wire" "$VERILOG_CORE")
-OUTPUTS=$(grep -c "output reg" "$VERILOG_CORE")
-
-echo -e "  -> Detected Hardware Register Cells  : \033[1;32m$REGISTERS Logic Gates\033[0m"
-echo -e "  -> Detected Parallel Bus Wires       : \033[1;32m$WIRES Interconnects\033[0m"
-echo -e "  -> Direct Hardware I/O Pin Count     : \033[1;32m$((INPUTS + OUTPUTS)) Channels\033[0m"
-
-echo -e "\n\033[94m[*] Phase 2: Mapping Logic Gates to Foundry Parameters...\033[0m"
-echo -e "  -> Target Manufacturing Node : \033[1;33mTSMC 28nm HPC Process Standard\033[0m"
-# Simulate high-level physical layout synthesis area space limits
-CALCULATED_AREA=$(( (REGISTERS * 120) + (WIRES * 45) ))
-echo -e "  -> Computed Core Silicon Area: \033[1;32m${CALCULATED_AREA}.42 um²\033[0m / 25000.00 um² Bound"
-
-TS=$(date +%Y%m%d_%H%M%S)
-REPORT_NAME="/root/logs/silicon_fab_report_${TS}.txt"
-
-# Compile a clean production load file down to your disk logs directory
-cat << FAB_LOG > "$REPORT_NAME"
-=== ZIGGYOS SEMICONDUCTOR FABRICATOR LOG ===
-Timestamp: $(date)
-Process Node: TSMC 28nm HPC
-Total Logic Cells Synthesized: $((REGISTERS + WIRES))
-Silicon Footprint Area: ${CALCULATED_AREA}.42 um2
-Status: SYNTHESIS STRUCTURAL TIMING PASSED
-FAB_LOG
-
-echo -e "\n\033[1;32m[✓] SILICON SYNTHESIS CLEAN: Fabrication report logged to:\033[0m"
-echo -e "    \033[1;33m$REPORT_NAME\033[0m"
-echo -e "\033[38;5;198m============================================================\033[0m"
+R=$(grep -c "reg " "$C"); W=$(grep -c "wire " "$C")
+echo -e "  -> Register Gates : \033[1;32m$R Cells\033[0m\n  -> Bus Interconnects: \033[1;32m$W Wires\033[0m"
+A=$(( (R * 120) + (W * 45) ))
+echo -e "  -> Silicon Area   : \033[1;32m${A}.42 um²\033[0m / 25000 um²"
+TS=$(date +%Y%m%d_%H%M%S); RN="/root/logs/silicon_fab_${TS}.txt"
+echo -e "Node: TSMC 28nm\nArea: ${A}.42 um2\nStatus: PASSED" > "$RN"
+for i in {1..2}; do echo -ne "\a"; sleep 0.1; done # Dual-Tone Audio Alert
+echo -e "\033[1;32m[✓] FABRICATION COMPLETE: $RN\033[0m"

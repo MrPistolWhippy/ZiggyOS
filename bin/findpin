@@ -1,0 +1,5 @@
+#!/bin/sh
+Q="$1"; F="/root/config/silicon_rules.json"
+echo -e "\033[1;36m           ZIGGYOS SILICON PIN LOOKUP MACRO ENGINE          \033[0m"
+if [ -z "$Q" ]; then echo "Usage: findpin <pin_name>"; exit 1; fi
+if [ -f "$F" ]; then grep -i "$Q" "$F" | tr -d '," '; else echo "[-] Missing silicon profile."; fi
