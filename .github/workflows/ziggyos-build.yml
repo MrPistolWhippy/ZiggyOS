@@ -1,0 +1,31 @@
+name: ZiggyOS Core Compilation Engine Verification
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Local Repository Branch
+      uses: actions/checkout@v4
+
+    - name: Set up Python Environment 
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Verify Workspace Core Directory Mapping
+      run: |
+        echo "[*] Checking structural integrity layers..."
+        test -d bin && echo "[+] Binary directory validated."
+        test -d modules && echo "[+] Engine modules directory validated."
+
+    - name: Execute Shell Asset Verification Test
+      run: |
+        echo "[*] Initializing asset layout compiler check..."
+        bash ./bin/build_dash.sh
