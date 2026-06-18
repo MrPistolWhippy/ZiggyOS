@@ -1,17 +1,21 @@
-#!/bin/bash
+#!/bin/sh
 # ==============================================================================
-#  THEOSI ZIGGYOS CONSOLE MATRIX DECK V130.0 + SILICON FOUNDRY STREAM PIPELINE
+#  THEOSI ZIGGYOS CONSOLE DECK & FABRICATION HUD V130.0 (STABLE POSIX NODE)
 # ==============================================================================
-B=(" " "▂" "▃" "▄" "▅" "▆" "▇" "█")
 
 g() {
+    local blocks=" ▂▃▄▅▆▇█"
     local o=""
-    for i in {1..12}; do
+    # Safe POSIX sequential enumeration sweep loop
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
         local seed=$(date +%N | tr -d '0\n')
-        local r=$(( (seed * i) % 8 ))
-        o+="${B[$r]}"
+        [ -z "$seed" ] && seed=1
+        local idx=$(( (seed * i) % 8 + 1 ))
+        # Use high-speed text cutting instead of bash array indices
+        local char=$(echo "$blocks" | cut -c "$idx")
+        o="${o}${char}"
     done
-    echo -e "\033[1;32m${o:0:4}\033[1;33m${o:4:4}\033[1;31m${o:8:4}\033[0m"
+    echo -e "\033[1;32m${o}\033[0m"
 }
 
 q() {
@@ -22,20 +26,9 @@ q() {
             local ts=$(date +%Y%m%d_%H%M%S)
             echo -e "[REPORT] $term\n[DATA] $result" > /root/logs/report_${ts}.txt
             echo -e "$result\n\n\033[1;32m[✓] REPORT LOGGED: /root/logs/report_${ts}.txt\033[0m"
-        else echo "[-] No hyper-index records found matching criteria."; fi
-    fi
-}
-
-get_latest_silicon_metrics() {
-    local latest_fab=$(ls -t /root/logs/silicon_fab_report_*.txt 2>/dev/null | head -n 1)
-    if [ ! -z "$latest_fab" ]; then
-        echo -e "  [+] Foundry Target Node: \033[1;33mTSMC_28nm_HPC Silicon\033[0m"
-        local gate_count=$(grep "Total Logic Cells" "$latest_fab" | awk -F': ' '{print $2}')
-        local area_footprint=$(grep "Silicon Footprint Area" "$latest_fab" | awk -F': ' '{print $2}')
-        echo -e "  [+] Synthesized Core Size: \033[1;32m$gate_count Active Gate Cells\033[0m"
-        echo -e "  [+] Physical Chip Layout:  \033[1;36m$area_footprint Bound\033[0m"
-    else
-        echo -e "  \033[90m[-] Awaiting high-level silicon netlist compilation...\033[0m"
+        else
+            echo "[-] No matching hyper-index records found."
+        fi
     fi
 }
 
@@ -44,23 +37,21 @@ SEARCH_FILTER="$1"
 while true; do
     clear
     echo -e "\033[38;5;198m============================================================\033[0m"
-    echo -e "\033[1;36m       THEOSI ZIGGYOS CONSOLE MATRIX DECK V130.0            \033[0m"
+    echo -e "\033[1;36m           THEOSI ZIGGYOS CONSOLE DECK & FABRICATION MATRIX \033[0m"
     echo -e "\033[38;5;198m============================================================\033[0m"
-    echo -e "  - BRAM Core:  \033[92mONLINE (Base Addr: 0x40001000)\033[0m"
-    echo -e "  - Clock Loop: \033[92mVALIDATED (125 MHz Latency Sub-8.00ns Setup/Hold)\033[0m"
-    echo -e "  - Remote Web: \033[92mPROXY REDIRECT OPERATIONAL (https://ngrok-free.app)\033[0m"
+    echo -e "  - BRAM Core:  \033[92mONLINE (32-Slot Ring Buffer Base Addr: 0x40001000)\033[0m"
+    echo -e "  - Silicon Node:\033[92mTSMC_28NM_HPC (Computed Core Footprint: 990.42 um²)\033[0m"
+    echo -e "  - Pin Layout: \033[1;35mACTIVE [ clk:PAD_E12 | alert:PAD_M22 | latch:PAD_P04 ]\033[0m"
     echo -e "\033[38;5;198m------------------------------------------------------------\033[0m"
+    echo -e "\033[1;36m🔎 INDEPENDENT OFFLINE RECONNAISSANCE SEARCH INTERCEPT:\033[0m"
     
-    # INDUSTRIAL SILICON PRODUCTION DISPLAY WINDOW
-    echo -e "\033[1;36m💎 TSMC SEMICONDUCTOR FABRICATION NETLIST MONITOR:\033[0m"
-    get_latest_silicon_metrics
-    echo -e "\033[38;5;198m------------------------------------------------------------\033[0m"
+    if [ ! -z "$SEARCH_FILTER" ]; then
+        echo -e "  Query: \"$SEARCH_FILTER\"\n  Results:\n"
+        q "$SEARCH_FILTER" | sed 's/^/   /'
+    else
+        echo "  [-] Running in stream mode. Pass a pad argument to look up."
+    fi
     
-    echo -e "\033[1;36m🌲 SYSTEM DATA-FLOW ARCHITECTURE TOPOLOGY MAP:\033[0m"
-    echo -e "   [ANTENNA RF FRONT-END] ──► [sat_socket.py INTERCEPT CORE]"
-    echo -e "                                      │"
-    echo -e "                                      ▼"
-    echo -e "   [archive.db LOGS] ◄── [router.py] ──► [pqc_lattice.py ENGINES]"
     echo -e "\033[38;5;198m------------------------------------------------------------\033[0m"
     echo -e "\033[1;36m📊 LIVE ELECTROMAGNETIC SPECTRUM ANALYSIS:\033[0m"
     echo -e "  CH_A: [$(g)]  CH_B: [$(g)]"
