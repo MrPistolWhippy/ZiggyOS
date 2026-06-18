@@ -1,0 +1,1 @@
+void uart_isr() { volatile int *dr=(int*)0x4000C000; char c=*dr; }
