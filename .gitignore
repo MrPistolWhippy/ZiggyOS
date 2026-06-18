@@ -6,3 +6,4 @@ isodir/
 __pycache__/
 *.pyc
 .git-credentials
+.git-credentials

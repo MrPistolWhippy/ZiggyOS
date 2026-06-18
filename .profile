@@ -3,7 +3,7 @@ alias ship='/root/bin/git_push_string.sh'
 alias save='/root/bin/fix_and_save_all.sh'
 
 # Custom ZiggyOS Omni-Deck Prompt Scheme Configuration
-export PS1="\[\033[1;35m\][\[\033[1;36m\]ZIGGYOS\[\033[1;35m\]]\[\033[1;32m\][DECK-V100.0]\[\033[1;33m\] # \[\033[0m\]"
+export PS1="\[\033[1;35m\][\[\033[1;36m\]ZIGGYOS\[\033[1;35m\]]\[\033[1;32m\][DECK-V180.0]\[\033[1;33m\] # \[\033[0m\]"
 
 # Automated ZiggyOS SSH Server Lifecycle Provisioning
 if ! pgrep -x "sshd" > /dev/null; then
