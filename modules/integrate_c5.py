@@ -1,61 +1,35 @@
-import sqlite3
-import hashlib
-import time
-import sys
+#!/usr/bin/env python3
+# ==============================================================================
+#  THEOSI C5 MATRIX INTEGRITY VALIDATOR ENGINE - ABSOLUTE FINAL REPAIR
+# ==============================================================================
+import hashlib, sys
 
-DB_PATH = "/root/archive.db"
-C5_LOG_PATH = "/root/c5_matrix.log"
-
-# Electric Teal Terminal Profile Escape Strings
-TEAL = "\033[96m"
-WHITE = "\033[97m"
-GOLD = "\033[93m"
-RESET = "\033[0m"
-
-print(f"{TEAL}[+] INITIATING ANTHROPIC CLAUDE 5 MODEL MATRIX INTEGRATION...{RESET}")
-time.sleep(0.5)
-
-def simulate_c5_inference():
-    try:
-        # Establish link parameters to the local relational blockchain tracking data store
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        # Pull system data logs for prompt payload parsing analysis
-        cursor.execute("SELECT COUNT(*) FROM p6_ledger;")
-        total_blocks = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT block_index, block_hash, eas_uid, status FROM p6_ledger ORDER BY block_index DESC LIMIT 1;")
-        latest_record = cursor.fetchone()
-        conn.close()
-        
-        # Build contextual analysis payload vectors based on system inventory state
-        if latest_record:
-            idx, b_hash, uid, status = latest_record
-            payload_context = f"BlockIndex: #{idx}, TargetUID: {uid}, OperationalStatus: {status}"
-        else:
-            payload_context = "LEDGER_EMPTY_INITIAL_GENESIS_STATE"
-
-        # Generate a simulated 512-bit secure API handshake token string
-        handshake_seed = f"claude5_auth_token_layer_{time.time()}"
-        api_token = hashlib.sha256(handshake_seed.encode()).hexdigest()
-
-        print(f"[+] Active API Authorization Key Verified: {GOLD}c5_live_key_{api_token[:16]}...{RESET}")
-        print("[*] Dispatching system telemetry context packet vectors to the model cluster...")
-        time.sleep(0.8)
-
-        # Log simulated deep neural analytical feedback response parameters
-        with open(C5_LOG_PATH, "a") as log:
-            log.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] --- CLAUDE 5 ARCHITECTURE ENGINE INTELLIGENCE DEBRIEF ---\n")
-            log.write(f"Parsed Ingress Context: {payload_context}\n")
-            log.write(f"Model Engine Verdict: Analytical processing metrics stable. Total records mapped across relational table layout: {total_blocks}.\n")
-            log.write("System Vulnerability Matrix Assessment: Operational telemetry securely chained. No localized physical loop anomalies detected.\n\n")
-
-        print(f"\033[92m[+] INTEGRATION PASS SUCCESSFUL: CLAUDE 5 DEEP INFERENCE ENGINE IS LIVE\033[0m")
-        print(f"[*] Analysis response records appended securely to text data pipeline log: {C5_LOG_PATH}")
-
-    except Exception as e:
-        print(f"[-] AI Layer Pipeline Interrupted: {str(e)}")
+def verify_c5_integrity(test_string, expected_tag):
+    """Compares calculated signatures against expected tags directly as flat words"""
+    # Force isolate the precise string characters from the shell parameters
+    clean_string = str(test_string).strip()
+    clean_expected = str(expected_tag).strip()
+    
+    # Compute the SHA-256 fingerprint footprint
+    calculated_tag = hashlib.sha256(clean_string.encode('utf-8')).hexdigest()
+    
+    print("=" * 50)
+    print(f"[*] C5 MATRIX INTEGRITY CHECK")
+    print("=" * 50)
+    print(f" -> Expected   : {clean_expected}")
+    print(f" -> Calculated : {calculated_tag}")
+    
+    # Check absolute raw value similarity
+    if calculated_tag == clean_expected:
+        print("\033[1;32m[+] INTEGRITY PASS: DATA BLOCK AUTHENTIC AND UNTAMPERED\033[0m")
+        return True
+    else:
+        print("\033[1;31m[!] INTEGRITY ALERT: SIGNATURE MISMATCH DETECTED!\033[0m")
+        return False
 
 if __name__ == "__main__":
-    simulate_c5_inference()
+    if len(sys.argv) > 2:
+        # Extract the precise items at index 1 and index 2 directly
+        verify_c5_integrity(sys.argv[1], sys.argv[2])
+    else:
+        print("\033[93m[-] Usage: ./integrate_c5.py \"data_string\" \"hash_to_verify\"\033[0m")
