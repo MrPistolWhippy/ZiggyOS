@@ -3,7 +3,6 @@ alias ship='/root/bin/git_push_string.sh'
 alias save='/root/bin/fix_and_save_all.sh'
 
 # Custom ZiggyOS Omni-Deck Prompt Scheme Configuration
-export PS1="\[\033[1;35m\][\[\033[1;36m\]ZIGGYOS\[\033[1;35m\]]\[\033[1;32m\][DECK-V180.0]\[\033[1;33m\] # \[\033[0m\]"
 
 # Automated ZiggyOS SSH Server Lifecycle Provisioning
 if ! pgrep -x "sshd" > /dev/null; then
@@ -18,3 +17,7 @@ if ! pgrep -f "server.js" > /dev/null; then
 fi
 alias boot='./workspace/bin/boot_cockpit.sh'
 alias probe='/root/workspace/bin/run_kernel.sh'
+
+# Global Absolute Path Architecture Configuration
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/root/workspace/bin"
+export PS1="\[\033[1;36m\][ZIGGYOS]\[\033[1;36m\][TEAL-V180.0] # \[\033[0m\]"
