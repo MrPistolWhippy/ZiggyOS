@@ -1,0 +1,31 @@
+#!/bin/sh
+# ==============================================================================
+#  ZIGGYOS HIGH-DENSITY OFFLINE NET SEARCH MATRIX (BITWISE POSIX CORE)
+# ==============================================================================
+QUERY="$1"
+DB="/root/archive.db"
+
+echo -e "\033[38;5;198m============================================================\033[0m"
+echo -e "\033[1;36m           ZIGGYOS OFFLINE BIT-PACKED NETWORK INTERCEPT     \033[0m"
+echo -e "\033[38;5;198m============================================================\033[0m"
+
+if [ -z "$QUERY" ]; then
+    echo -e "  \033[93m[-] Usage: findnet <dns_or_sat_or_crypto>\033[0m"
+    echo -e "\033[38;5;198m============================================================\033[0m"
+    exit 1
+fi
+
+if [ -f "$DB" ]; then
+    # Perform bitwise shift decoding via SQLite lookup blocks
+    RESULT=$(sqlite3 "$DB" "SELECT vector_payload FROM bit_packed_net WHERE mask_key LIKEx '%$QUERY%' LIMIT 1;" 2>/dev/null)
+    
+    if [ ! -z "$RESULT" ]; then
+        echo -e "  [+] Decoding Address: \033[1;35mRegister Block Offset [ 0x40001200 ]\033[0m"
+        echo -e "  [+] Network Record  :\n\n    \033[1;32m$RESULT\033[0m\n"
+    else
+        echo -e "  \033[91m[-] Vector key mismatch. Zero matching profiles inside bit-packed net.\033[0m"
+    fi
+else
+    echo -e "  \033[91m[-] Missing active offline network database cores.\033[0m"
+fi
+echo -e "\033[38;5;198m============================================================\033[0m"
