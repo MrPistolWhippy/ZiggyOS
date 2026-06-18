@@ -3,7 +3,7 @@ CC_X86 = gcc -m32 -ffreestanding -O3 -Wall -Wextra -fno-exceptions -fdata-sectio
 LD_X86 = ld -m elf_i386 -nostdlib --gc-sections -z max-page-size=4096 -T /root/workspace/config/linker.ld
 
 # Strictly include core architecture modules, ignoring conflicting standalone peripheral files
-SRC = /root/workspace/src/app/main.c /root/workspace/src/shell.c /root/workspace/src/app_upgrade_layer.c /root/workspace/src/app_userland.c
+SRC = /root/workspace/src/app/main.c /root/workspace/src/shell.c /root/workspace/src/app_upgrade_layer.c /root/workspace/src/app_userland.c /root/workspace/src/pci_driver.c
 
 all: x86
 

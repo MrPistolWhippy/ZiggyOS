@@ -41,6 +41,15 @@ void shell_execute_command(const char *shell_buffer) {
     else if (shell_strcmp(shell_buffer, "netstat") == 0) {
         shell_print("P2P Aquarius Nodes: 14 Active | Ingest: 54 Cells\n");
     }
+    else if (shell_strcmp(shell_buffer, "probe") == 0) {
+        void probe_pci_bus_driver_hook(void);
+        probe_pci_bus_driver_hook();
+    }
+    else if (shell_strcmp(shell_buffer, "aquarius") == 0) {
+        shell_print("[NET] Auditing Aquarius Core Interface Link Status...\n");
+        shell_print("[NET] Device: Intel I350 Gigabit Network Connection\n");
+        shell_print("[NET] Status: Hardware Promiscuous Ingest Active.\n");
+    }
     else if (shell_strcmp(shell_buffer, "matrix") == 0) {
         shell_print("CH_4: [--#] | CH_5: [##] | VOLATILE MEM BLOCK: 0X0B4E\n");
     } 

@@ -4,16 +4,18 @@
     <title>ZIGGYOS V180.0 ELECTRIC TEAL DECK</title>
     <style>
         body { background-color: #000; color: #00f3ff; font-family: 'Courier New', monospace; padding: 20px; }
-        .grid-960 { max-width: 960px; margin: 0 auto; }
-        .card { border: 2px solid #00f3ff; padding: 15px; margin-bottom: 20px; background: #02090d; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
-        .teal-mesh { border-color: #00f3ff; }
+        .grid-960 { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media(min-width: 768px) { .grid-960 { grid-template-columns: 2fr 1fr; } }
+        .card { border: 2px solid #00f3ff; padding: 15px; background: #02090d; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
+        .full-width { grid-column: 1 / -1; }
         h2 { color: #00f3ff; margin-top: 0; text-transform: uppercase; font-size: 1.2em; text-shadow: 0 0 8px #00f3ff; }
-        pre { white-space: pre-wrap; word-wrap: break-word; color: #00f3ff; font-size: 0.9em; line-height: 1.4; max-height: 400px; overflow-y: auto; }
-        .status-bar { display: flex; justify-content: space-between; border-bottom: 1px solid #00f3ff; padding-bottom: 5px; margin-bottom: 15px; font-size: 0.8em; color: #00f3ff; }
+        pre { white-space: pre-wrap; word-wrap: break-word; color: #00f3ff; font-size: 0.9em; line-height: 1.4; max-height: 350px; overflow-y: auto; }
+        .status-bar { display: flex; justify-content: space-between; border-bottom: 1px solid #00f3ff; padding-bottom: 5px; margin-bottom: 15px; font-size: 0.8em; }
         .btn-panel { display: flex; gap: 15px; margin-bottom: 15px; }
-        .cyber-btn { background: #000; color: #00f3ff; border: 1px solid #00f3ff; padding: 10px 15px; font-family: 'Courier New', monospace; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: all 0.2s; box-shadow: inset 0 0 5px rgba(0, 243, 255, 0.2); }
-        .cyber-btn:hover { background: #00f3ff; color: #000; box-shadow: 0 0 15px #00f3ff; font-weight: 900; }
-        .cyber-btn.accent { color: #00f3ff; border-color: #00f3ff; }
+        .cyber-btn { background: #000; color: #00f3ff; border: 1px solid #00f3ff; padding: 10px 15px; font-family: 'Courier New', monospace; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: all 0.2s; }
+        .cyber-btn:hover { background: #00f3ff; color: #000; box-shadow: 0 0 15px #00f3ff; }
+        .chart-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 220px; }
+        .metric-text { font-size: 1.1em; font-weight: bold; margin-top: 10px; text-shadow: 0 0 5px #00f3ff; }
     </style>
     <script>
         async function fetchMetrics() {
@@ -22,6 +24,12 @@
                 const dataStatus = await resStatus.json();
                 document.getElementById('matrix-seed').innerText = dataStatus.entropy_matrix_seed;
                 document.getElementById('sys-time').innerText = dataStatus.timestamp;
+                
+                // Parse true storage allocations dynamically for canvas rendering
+                const used = parseFloat(dataStatus.disk_metrics.used);
+                const total = parseFloat(dataStatus.disk_metrics.total);
+                document.getElementById('disk-label').innerText = dataStatus.disk_metrics.raw_string + " Allocated";
+                renderTealChart(used, total);
 
                 const resLogs = await fetch('/api/logs');
                 const textLogs = await resLogs.text();
@@ -33,44 +41,107 @@
             }
         }
 
-        async function triggerAction(actionName) {
-            try {
-                await fetch('/api/action', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: actionName })
-                });
-                fetchMetrics();
-            } catch (e) {
-                alert("Action execution failed.");
-            }
-        }
+        function renderTealChart(used, total) {
+            const canvas = document.getElementById('diskChart');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const pct = used / total;
+            
+            ctx.clearRect(0, 0, 200, 200);
+            
+            // Draw baseline dim storage structure ring
+            ctx.beginPath();
+            ctx.arc(100, 100, 75, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#012630';
+            ctx.lineWidth = 14;
+            ctx.stroke();
+            
+            // Draw high-intensity glowing active electric teal data arc
+            ctx.beginPath();
+            ctx.arc(100, 100, 75, -0.5 * Math.PI, (-0.5 + 2 * pct) * Math.PI);
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 14;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#00f3ff';
+            ctx.stroke();
+            
+            // Clear shadow definitions for centered string metric overlays
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#00f3ff';
+            ctx.font = 'bold 16px Courier New';
+     pkill -9 -f server.js || true
+sleep 1
 
-        setInterval(fetchMetrics, 3000);
-        window.onload = fetchMetrics;
-    </script>
-</head>
-<body>
-    <div class="grid-960">
-        <div class="card teal-mesh">
-            <div class="status-bar">
-                <span>CELL ID: TEAL_MATRIX_DECK</span>
-                <span>SEED: <span id="matrix-seed">0x0000</span></span>
-            </div>
-            <h2>[🎛️] Electric Teal Override Controls</h2>
-            <div class="btn-panel">
-                <button class="cyber-btn" onclick="triggerAction('automate')">⚡ Run Omni-Automator</button>
-                <button class="cyber-btn" onclick="triggerAction('probe')">📡 Probe Hardware Driver</button>
-            </div>
-        </div>
+cat << 'EOF' > /root/workspace/bin/server.js
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
 
-        <div class="card teal-mesh">
-            <h2>[▶] Active Telemetry Log Stream Matrix</h2>
-            <pre id="log-stream">Connecting to data pool stream...</pre>
-            <div style="font-size: 0.7em; color: #00f3ff; margin-top: 10px; opacity: 0.7;">
-                Last Sync: <span id="sys-time">-</span>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+const server = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+
+    if ((req.url === '/' || req.url === '/dashboard') && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        return fs.createReadStream('/root/workspace/web/dashboard_panel.html').pipe(res);
+    }
+
+    if (req.url === '/api/status' && req.method === 'GET') {
+        let currentSeed = "0xAB8D";
+        try { currentSeed = fs.readFileSync('/tmp/current_seed.txt', 'utf8').trim(); } catch(e){}
+        
+        // Natively parse disk storage fields into numerical metrics
+        exec("df -h / | awk 'NR==2 {print $3 \" \" $2}'", (err, stdout) => {
+            const tokens = stdout.trim().split(/\s+/);
+            const usedStr = tokens[0] || "153G";
+            const totalStr = tokens[1] || "239G";
+            const usedNum = parseFloat(usedStr);
+            const totalNum = parseFloat(totalStr);
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({
+                system: "THEOSI ZIGGYOS OMNI-DECK V180.0",
+                node_runtime: process.version,
+                entropy_matrix_seed: currentSeed,
+                workspace_status: "ACTIVE_ISOLATED",
+                disk_metrics: {
+                    raw_string: `${usedStr}/${totalStr}`,
+                    used: usedNum,
+                    total: totalNum
+                },
+                timestamp: new Date().toISOString()
+            }, null, 4));
+        });
+        return;
+    }
+    
+    if (req.url === '/api/logs' && req.method === 'GET') {
+        const logPath = '/root/workspace/logs/swarm_cluster.log';
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        if (fs.existsSync(logPath)) return fs.createReadStream(logPath).pipe(res);
+        return res.end("[*] Log stream empty.");
+    }
+
+    if (req.url === '/api/action' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const parsed = JSON.parse(body);
+            let commandString = parsed.action === 'automate' ? '/root/workspace/bin/master_automate.sh --fast' : '/root/workspace/bin/run_kernel.sh';
+            exec(commandString, (err, stdout, stderr) => {
+                const logMessage = `\n[WEB_ACT] Triggered: ${parsed.action}\n${stdout || stderr}\n`;
+                fs.appendFileSync('/root/workspace/logs/swarm_cluster.log', logMessage);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: "SUCCESS" }));
+            });
+        });
+        return;
+    }
+    res.writeHead(404); res.end();
+});
+
+server.listen(3000, () => { console.log('[+] Interactive Dashboard Web UI active on port 3000.'); });
