@@ -1,0 +1,28 @@
+#!/bin/sh
+# ==============================================================================
+#  ZIGGYOS TACTICAL FORENSIC LEDGER CHECKSUM FILTRATION MACRO (STABLE POSIX)
+# ==============================================================================
+TERM="$1"
+FILE=$(ls -t /root/logs/forensic_report_*.txt 2>/dev/null | head -n 1)
+
+echo -e "\033[38;5;198m============================================================\033[0m"
+echo -e "\033[1;36m           ZIGGYOS CHECKSUM FILTRATION MACRO ENGINE         \033[0m"
+echo -e "\033[38;5;198m============================================================\033[0m"
+
+if [ -z "$TERM" ]; then
+    echo -e "  \033[93m[-] Usage: findhash <filename_or_md5_string_fragment>\033[0m"
+    echo -e "\033[38;5;198m============================================================\033[0m"
+    exit 1
+fi
+
+if [ -f "$FILE" ]; then
+    echo -e "[*] Scanning Registry File: \033[1;33m$(basename $FILE)\033[0m"
+    echo -e "[*] Active Isolate Query   : \033[1;35m\"$TERM\"\033[0m"
+    echo -e "------------------------------------------------------------"
+    
+    # Read the file directly to find lines containing our search term
+    grep -i "$TERM" "$FILE"
+else
+    echo -e "  \033[91m[-] Missing active forensic artifact report ledgers.\033[0m"
+fi
+echo -e "\033[38;5;198m============================================================\033[0m"
