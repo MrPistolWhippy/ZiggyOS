@@ -1,0 +1,13 @@
+#!/bin/sh
+TERM="$1"
+DB="/root/archive.db"
+echo -e "\033[38;5;198m============================================================\033[0m"
+echo -e "\033[1;36m           ZIGGYOS POLYMORPHIC VARIANT SCANNER ENGINE       \033[0m"
+echo -e "\033[38;5;198m============================================================\033[0m"
+if [ -z "$TERM" ]; then echo "Usage: findvariant <token_or_payload_keyword>"; exit 0; fi
+if [ -f "$DB" ]; then
+    sqlite3 "$DB" "SELECT bit_id, vector_payload FROM bit_packed_net WHERE mask_key='polymorphic_gate' AND vector_payload LIKE '%$TERM%';" 2>/dev/null
+else
+    echo "[-] Memory-mapped matrix unlinked."
+fi
+echo -e "\033[38;5;198m============================================================\033[0m"
