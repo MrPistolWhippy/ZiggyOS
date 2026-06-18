@@ -1,2 +1,5 @@
 #!/bin/bash
+# ==============================================================================
+#  THEOSI ZIGGYOS SCOUTER EXECUTION LAUNCHER CORE (FIXED RUNTIME)
+# ==============================================================================
 python3 /root/modules/scouter_engine.py
