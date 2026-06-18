@@ -1,0 +1,12 @@
+{
+    "foundry_node": "TSMC_28nm_HPC",
+    "target_clock_mhz": 125.0,
+    "max_silicon_area_um2": 25000.0,
+    "gate_leakage_limit_nw": 150.0,
+    "pin_placement": {
+        "clk": "PAD_E12",
+        "rst_n": "PAD_A01",
+        "alert_trigger": "PAD_M22",
+        "pqc_secure_latch": "PAD_P04"
+    }
+}
