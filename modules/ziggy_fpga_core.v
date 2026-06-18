@@ -52,3 +52,57 @@ module ziggy_fpga_core (
         end
     end
 endmodule
+
+// ==============================================================================
+//  ZIGGYOS OFF-GRID BARE-METAL UART HARDWARE SERIAL RECEIVER NODE (OMEGA CORE)
+// ==============================================================================
+module ziggy_uart_rx (
+    input wire clk, rst_n, rx_line,
+    output reg [7:0] rx_data, output reg rx_ready
+);
+    reg [3:0] bit_idx; reg [12:0] clk_cnt; // 115200 Baud rate clock-step divisions
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin bit_idx <= 0; rx_ready <= 0; end
+        else if (clk_cnt == 13'd1085) begin // 125MHz / 115200 sample ticks
+            bit_idx <= bit_idx + 1;
+            if (bit_idx >= 1 && bit_idx <= 8) rx_data[bit_idx-1] <= rx_line;
+            if (bit_idx == 9) rx_ready <= 1;
+        end else rx_ready <= 0;
+    end
+endmodule
+
+// ==============================================================================
+//  ZIGGYOS OFF-GRID BARE-METAL UART HARDWARE SERIAL RECEIVER NODE (OMEGA CORE)
+// ==============================================================================
+module ziggy_uart_rx (
+    input wire clk, rst_n, rx_line,
+    output reg [7:0] rx_data, output reg rx_ready
+);
+    reg [3:0] bit_idx; reg [12:0] clk_cnt; // 115200 Baud rate clock-step divisions
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin bit_idx <= 0; rx_ready <= 0; end
+        else if (clk_cnt == 13'd1085) begin // 125MHz / 115200 sample ticks
+            bit_idx <= bit_idx + 1;
+            if (bit_idx >= 1 && bit_idx <= 8) rx_data[bit_idx-1] <= rx_line;
+            if (bit_idx == 9) rx_ready <= 1;
+        end else rx_ready <= 0;
+    end
+endmodule
+
+// ==============================================================================
+//  ZIGGYOS BARE-METAL UART HARDWARE RX NODE (STABLE OMEGA PIPELINE)
+// ==============================================================================
+module ziggy_uart_rx (
+    input wire clk, rst_n, rx_line,
+    output reg [7:0] rx_data, output reg rx_ready
+);
+    reg [3:0] bit_idx; reg [12:0] clk_cnt;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin bit_idx <= 0; rx_ready <= 0; end
+        else if (clk_cnt == 13'd1085) begin
+            bit_idx <= bit_idx + 1;
+            if (bit_idx >= 1 && bit_idx <= 8) rx_data[bit_idx-1] <= rx_line;
+            if (bit_idx == 9) rx_ready <= 1;
+        end else rx_ready <= 0;
+    end
+endmodule
