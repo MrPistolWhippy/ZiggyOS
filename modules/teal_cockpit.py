@@ -28,7 +28,7 @@ def monitor_socket(port):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(1.5)
-            s.connect(("127.0.0.1", port))
+            s.connect(("0.0.0.0", port))
             msg = s.recv(1024).decode('utf-8').strip()
             s.close()
             if msg:

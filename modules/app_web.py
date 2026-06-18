@@ -53,4 +53,4 @@ class WebHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print("Web UI running locally on http://127.0.0.1:8080")
-    HTTPServer(("127.0.0.1", 8080), WebHandler).serve_forever()
+    HTTPServer(("0.0.0.0", 8080), WebHandler).serve_forever()

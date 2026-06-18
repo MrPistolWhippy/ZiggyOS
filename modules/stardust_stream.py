@@ -20,7 +20,7 @@ def run_expanding_stream():
         # Create a connection window to the active telemetry pipeline
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2.0)
-        s.connect(("127.0.0.1", 44777))
+        s.connect(("0.0.0.0", 44777))
         print("[✓] Handshake locked. Extracting live telemetry blocks...")
         time.sleep(1)
     except Exception:

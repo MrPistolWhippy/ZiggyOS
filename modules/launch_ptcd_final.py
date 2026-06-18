@@ -8,7 +8,7 @@ def init_data_nodes():
     co.commit(); co.close()
 
 def handle_client(cs, ad):
-    if ad[0] != "127.0.0.1": cs.close(); return
+    if ad[0] != "0.0.0.0": cs.close(); return
     try:
         dt = cs.recv(1024).decode().strip()
         if dt:
@@ -23,7 +23,7 @@ def handle_client(cs, ad):
 def start_network_listener():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        s.bind(("127.0.0.1", P)); s.listen(5)
+        s.bind(("0.0.0.0", P)); s.listen(5)
         while True: cl, ad = s.accept(); threading.Thread(target=handle_client, args=(cl, ad), daemon=True).start()
     except: pass
 

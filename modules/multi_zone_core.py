@@ -13,9 +13,9 @@ KEY_HIERARCHY = {
 
 # Network Socket Topology Mapping
 ZONE_CONFIG = {
-    "US-EAST-ZONE":   {"host": "127.0.0.1", "port": 44701, "frequency": "144.100 MHz"},
-    "NL-EUROPE-NORTH":{"host": "127.0.0.1", "port": 44702, "frequency": "144.500 MHz"},
-    "NZ-PACIFIC-SOUTH":{"host": "127.0.0.1", "port": 44703, "frequency": "144.777 MHz"}
+    "US-EAST-ZONE":   {"host": "0.0.0.0", "port": 44701, "frequency": "144.100 MHz"},
+    "NL-EUROPE-NORTH":{"host": "0.0.0.0", "port": 44702, "frequency": "144.500 MHz"},
+    "NZ-PACIFIC-SOUTH":{"host": "0.0.0.0", "port": 44703, "frequency": "144.777 MHz"}
 }
 
 def simulate_zone_traffic(zone_name, port):
@@ -23,7 +23,7 @@ def simulate_zone_traffic(zone_name, port):
     try:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(("127.0.0.1", port))
+        server.bind(("0.0.0.0", port))
         server.listen(5)
         while True:
             conn, _ = server.accept()

@@ -8,7 +8,7 @@ def run_server():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        s.bind(("127.0.0.1", PORT))
+        s.bind(("0.0.0.0", PORT))
         s.listen(1)
         while True:
             conn, addr = s.accept()
@@ -39,7 +39,7 @@ def run_server():
 def send_request(msg):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("127.0.0.1", PORT))
+        s.connect(("0.0.0.0", PORT))
         s.sendall(msg.encode())
         print(s.recv(4096).decode())
         s.close()
