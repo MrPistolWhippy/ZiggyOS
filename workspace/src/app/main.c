@@ -1,1 +1,1 @@
-void main(){ putc("K"); }
+void kernel_main(){ putc("K"); }
