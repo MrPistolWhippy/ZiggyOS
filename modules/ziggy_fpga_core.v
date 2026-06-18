@@ -106,3 +106,9 @@ module ziggy_uart_rx (
         end else rx_ready <= 0;
     end
 endmodule
+
+// WIRE_ID_EXT: AQUARIUS-P2P-561785-CARD // SIG_LOCK: 0x591b2f871bd59515 //
+
+// WIRE_ID_EXT: AQUARIUS-P2P-032471-CARD // SIG_LOCK: 0x92200669f1960b52 //
+
+// WIRE_ID_EXT: AQUARIUS-P2P-743962-CARD // SIG_LOCK: 0xdd9294a4e1158b7c //
