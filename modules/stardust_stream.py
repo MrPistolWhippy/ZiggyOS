@@ -1,55 +1,64 @@
-import sys
-import socket
-import time
-import random
+#!/usr/bin/env python3
+# ==============================================================================
+#  ZIGGYOS STARDUST STREAM ANIMATION ENGINE & LOCAL PACKET VECTOR
+# ==============================================================================
+import sys, socket, threading, time, random
 
 GLYPHS = {
-    'Z': ["#######", "    ## ", "   ##  ", "  ##   ", " ##    ", "##     ", "#######"],
-    'I': ["#######", "  ###  ", "  ###  ", "  ###  ", "  ###  ", "  ###  ", "#######"],
-    'G': [" ##### ", "##   ##", "##     ", "## ####", "##   ##", "##   ##", " ##### "],
-    'Y': ["##   ##", "##   ##", " ## ## ", "  ###  ", "  ###  ", "  ###  ", "  ###  "],
-    ' ': ["       ", "       ", "       ", "       ", "       ", "       ", "       "]
+    'Z': ["██████", "   ██ ", "  ██  ", " ██   ", "██████"],
+    'I': [" ████ ", "  ██  ", "  ██  ", "  ██  ", " ████ "],
+    'G': [" ████ ", "██    ", "██ ███", "██  ██", " ████ "],
+    'Y': ["██  ██", " ████ ", "  ██  ", "  ██  ", "  ██  "],
+    'O': [" ████ ", "██  ██", "██  ██", "██  ██", " ████ "],
+    'S': [" █████", "██    ", " ████ ", "    ██", "█████ "]
 }
-SPARKS = ['+', '*', '.', '✧', '✨', ' ', ' ']
+SPARKS = ['+', '*', '.', 'x', ' ']
+
+def fire_background_packet(frame_id):
+    """Fires a localized telemetry status frame directly at port 44777"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        s.connect(("127.0.0.1", 44777))
+        s.sendall(f"ZIGGY_FRAME_{frame_id}".encode())
+        s.close()
+    except:
+        pass
 
 def run_expanding_stream():
-    print("[*] Establishing local handshake with loopback socket at 127.0.0.1:44777...")
     frame = 0
+    # Clear screen initially for clean display tracking
+    sys.stdout.write("\033[2J\033[H")
     
-    try:
-        # Create a connection window to the active telemetry pipeline
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(2.0)
-        s.connect(("0.0.0.0", 44777))
-        print("[✓] Handshake locked. Extracting live telemetry blocks...")
-        time.sleep(1)
-    except Exception:
-        print("[-] Active socket offline. Falling back to internal loop validation.")
-
     try:
         while True:
             frame += 1
-            # Render a 7-line vertical space block
-            sys.stdout.write("\033[H\033[J")
-            sys.stdout.write(f"✧ ZIGGY-OS NETWORK STREAM ✧ FRAME: {frame} | NODES ACTIVE: 75 ✧\n\n")
+            # Fire an asynchronous socket string payload to trigger the sniffer
+            threading.Thread(target=fire_background_packet, args=(frame,), daemon=True).start()
             
-            for row_idx in range(7):
-                rendered_row = ""
-                # Draw the target signature
-                for char in "ZIGGY":
+            # Reset cursor positions cleanly to coordinates (0,0) to prevent vertical scrolling
+            sys.stdout.write("\033[H")
+            sys.stdout.write(f"\033[1;36m[+] ZIGGY-OS NETWORK STREAM | FRAME: {frame} | NODES: 75\033[0m\n\n")
+            
+            for row_idx in range(5):
+                rendered_row = "  "
+                for char in "ZIGGYOS":
                     if char in GLYPHS:
-                        for cell in GLYPHS[char][row_idx]:
-                            if cell == '#':
-                                rendered_row += "𝖅"
+                        cell = GLYPHS[char][row_idx]
+                        # Disperse sparkle particles into the structural block layers
+                        for block in cell:
+                            if block == ' ':
+                                rendered_row += random.choice(SPARKS) if random.random() < 0.15 else ' '
                             else:
-                                rendered_row += random.choice(SPARKS) if random.random() < 0.20 else " "
-                print(f"  {rendered_row}")
+                                rendered_row += "\033[38;5;118m" + block + "\033[0m"
+                    rendered_row += " "
+                sys.stdout.write(f"{rendered_row}\n")
                 
-            sys.stdout.write(f"\n[+] Processing swarm metrics on spectrum beacon 144.777 MHz...\n")
+            sys.stdout.write(f"\n\033[94m[*] Processing swarm metrics on spectrum beacon 144.777 MHz...\033[0m\n")
             sys.stdout.flush()
-            time.sleep(0.15)
+            time.sleep(0.2)
     except KeyboardInterrupt:
-        print("\n[+] Connection stream closed cleanly.")
+        print("\n\033[93m[-] Connection stream closed cleanly.\033[0m")
 
 if __name__ == "__main__":
     run_expanding_stream()
