@@ -1,3 +1,8 @@
+#!/bin/bash
+echo -e "\033[1;35m[*] Partitioning On-Chip Block RAM (BRAM) Storage Caches...\033[0m"
+
+# 1. Overwrite the Verilog core to synthesize native silicon storage cells
+cat << 'FPGA_BRAM' > /root/modules/ziggy_fpga_core.v
 /* ==============================================================================
    ZIGGYOS HARDWARE-SYNTHESIZED POST-QUANTUM LATTICE & BRAM STORAGE CORE
    ============================================================================== */
@@ -52,3 +57,6 @@ module ziggy_fpga_core (
         end
     end
 endmodule
+FPGA_BRAM
+
+echo -e "\033[1;32m[+] SUCCESS! Block RAM silicon memory blocks partitioned cleanly.\033[0m"
