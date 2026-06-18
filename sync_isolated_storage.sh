@@ -1,0 +1,1 @@
+/root/bin/sync_isolated_storage.sh

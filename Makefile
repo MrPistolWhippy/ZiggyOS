@@ -12,7 +12,7 @@ all: x86 ipad
 
 x86:
 @echo "[*] Compiling Target 1/2: Intel x86 Bare-Metal Binary Layout..."
-$(CC_X86) -c $(SRC)
+	$(CC_X86) -c $(SRC)
 mv *.o src/ 2>/dev/null || true
 $(LD_X86) -o ziggyos_x86.bin src/*.o
 cp ziggyos_x86.bin ziggyos.bin

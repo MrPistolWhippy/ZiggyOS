@@ -1,11 +1,23 @@
+# Complete lockout for history dotfiles and cache nodes
+.*_history
+.bashrc
+.profile*
+.git-credentials
+.cache/
+.ssh/
+logs/
+data/ledgers/
+
+# Main binary extensions
 *.db
 *.img
 *.iso
 *.tar
 *.tgz
 *.hex
-logs/
-data/ledgers/
+
+# Keep application code vectors intact
 !bin/
 !modules/
 !config/
+!.gitignore

@@ -40,3 +40,9 @@ void handle_pit_timer_interrupt_tick(void) {
     // This acknowledges the signal and tells the hardware it is safe to issue the next tick
     __asm__ volatile ("outb %0, %1" : : "a"((uint8_t)0x20), "Nd"((uint16_t)0x20));
 }
+
+unsigned long long __umoddi3(unsigned long long a, unsigned long long b) {
+    unsigned long long res = 0;
+    while (a >= b) { a -= b; res++; }
+    return a;
+}
