@@ -1,4 +1,19 @@
 #!/bin/bash
+echo -e "\033[1;35m[*] Running Mini Timing & Graph Patch...\033[0m"
+
+# 1. Strict Hardware Clock Timing Constraints
+cat << 'HW_TIME' > /root/config/timing_constraints.xdc
+create_clock -add -name sys_clk_pin -period 8.00 -waveform {0 4} [get_ports { clk }];
+set_input_delay -clock sys_clk_pin -max 2.20 [get_ports {sdr_raw_i[*]}]
+set_input_delay -clock sys_clk_pin -min 0.40 [get_ports {sdr_raw_i[*]}]
+set_input_delay -clock sys_clk_pin -max 2.20 [get_ports {sdr_raw_q[*]}]
+set_input_delay -clock sys_clk_pin -min 0.40 [get_ports {sdr_raw_q[*]}]
+set_output_delay -clock sys_clk_pin -max 2.50 [get_ports {ram_data_out[*]}]
+HW_TIME
+
+# 2. Master HUD Dashboard with Animated Spectrum Graphs
+cat << 'HW_HUD' > /root/bin/control_panel.sh
+#!/bin/bash
 B=(" " "▂" "▃" "▄" "▅" "▆" "▇" "█")
 g() {
     local o=""
@@ -21,3 +36,7 @@ while true; do
     echo -e "\033[38;5;198m============================================================\033[0m"
     sleep 1
 done
+HW_HUD
+
+chmod +x /root/bin/control_panel.sh
+echo -e "\033[1;32m[+] SUCCESS! Mini Timing & Graph HUD deployed.\033[0m"
