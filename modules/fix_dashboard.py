@@ -29,3 +29,9 @@ html_code = f"""<!DOCTYPE html><html><head>
 <h2>REAL-TIME NETWORK SHARD TOPOLOGY SPREAD</h2><div id="network"></div>
 <script type="text/javascript">
   var container = document.getElementById('network');
+"""
+
+with open(HTML_PATH, "w") as f:
+    f.write(html_code)
+
+print("[+] Dashboard panel template rebuilt successfully.")

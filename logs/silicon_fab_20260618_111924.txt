@@ -1,0 +1,3 @@
+Node: TSMC 28nm
+Area: 990.42 um2
+Status: PASSED

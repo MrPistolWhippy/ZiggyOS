@@ -1,0 +1,9 @@
+alias monitor='/root/ram_matrix_sensor.sh'
+if [ -f /root/start_perpetual_sync.sh ]; then /root/start_perpetual_sync.sh > /dev/null 2>&1; fi
+clear && /root/master_autonomous_engine.sh && /root/boot_control_center.sh
+clear
+echo -e '\033[1;96m[*] INITIALIZING ZIGGY-OS SYSTEM MATRIX LIFECYCLE CONTROLS...\033[0m'
+/root/master_autonomous_engine.sh > /dev/null 2>&1
+/root/advanced_sql_suite.sh
+alias g='clear && /root/grounding_check.sh && /root/sync_isolated_storage.sh'
+alias g='clear && /root/perpetual_sentinel.sh && /root/grounding_check.sh'
