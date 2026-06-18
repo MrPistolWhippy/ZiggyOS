@@ -7,7 +7,12 @@ os.makedirs("/root/logs", exist_ok=True)
 
 def log(data, addr, proto, port):
     ts = datetime.now().strftime('%H:%M:%S')
-    msg = f"[{ts}] {proto} {addr} -> PORT {port} | PAYLOAD: {data.hex()[:20]}\n"
+    hex_payload = data.hex()[:16]
+    
+    # Translate raw packet bytes directly into clean ASCII text strings
+    ascii_str = "".join([chr(b) if 32 <= b <= 126 else "." for b in data[:12]])
+    
+    msg = f"[{ts}] {proto} -> PORT {p} | HEX: {hex_payload} | TXT: {ascii_str}\n"
     with open("/root/logs/network_sniff.log", "a") as f: f.write(msg)
     print(f"\033[92m[+] INTERCEPTED {proto} ON PORT {port} ({len(data)} B)\033[0m")
 
