@@ -88,3 +88,56 @@ const server = http.createServer((req, res) => {
 server.listen(3000, () => {
     console.log('[+] Interactive Command API Matrix listening on port 3000.');
 });
+    if (req.url === '/api/status' && req.method === 'GET') {
+        let currentSeed = "0x7F";
+        try { currentSeed = fs.readFileSync('/tmp/current_seed.txt', 'utf8').trim(); } catch(e){}
+        
+        exec("df -h / | awk 'NR==2 {print $3 \" \" $2}'", (err, stdout) => {
+            const tokens = stdout.trim().split(/\s+/);
+            const usedStr = tokens[0] || "153G";
+            const totalStr = tokens[1] || "239G";
+            const usedNum = parseFloat(usedStr);
+            const totalNum = parseFloat(totalStr);
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({
+                system: "CAPSULE-CORP SAIYAN SCOUTER V9000",
+                node_runtime: process.version,
+                ki_entropy_seed: currentSeed,
+                scouter_status: "OVER_9000",
+                disk_metrics: {
+                    raw_string: `${usedStr}/${totalStr}`,
+                    used: usedNum,
+                    total: totalNum
+                },
+                timestamp: new Date().toISOString()
+            }, null, 4));
+        });
+        return;
+    }
+    if (req.url === '/api/logs' && req.method === 'GET') {
+        const logPath = '/root/workspace/logs/swarm_cluster.log';
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        if (fs.existsSync(logPath)) return fs.createReadStream(logPath).pipe(res);
+        return res.end("[*] Chamber records empty.");
+    }
+
+    if (req.url === '/api/action' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const parsed = JSON.parse(body);
+            let commandString = parsed.action === 'automate' ? '/root/workspace/bin/master_automate.sh --fast' : '/root/workspace/bin/run_kernel.sh';
+            exec(commandString, (err, stdout, stderr) => {
+                const logMessage = `\n[TRAIN_LOG] Session Triggered: ${parsed.action}\n${stdout || stderr}\n`;
+                fs.appendFileSync('/root/workspace/logs/swarm_cluster.log', logMessage);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: "MAX_POWER" }));
+            });
+        });
+        return;
+    }
+    res.writeHead(404); res.end();
+});
+
+server.listen(3000, () => { console.log('[+] Capsule Corp Scouter Server broadcasting on port 3000.'); });
