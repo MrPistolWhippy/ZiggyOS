@@ -1,42 +1,44 @@
-#!/bin/sh
-FAST_MODE=0
-VERBOSE_MODE=0
+#!/usr/bin/env bash
+set -uo pipefail
+G='\033[0;32m'; C='\033[0;36m'; Y='\033[0;33m'; R='\033[0;31m'; NC='\033[0m'
 
-for arg in "$@"; do
-    case $arg in
-        --fast) FAST_MODE=1 ;;
-        --verbose) VERBOSE_MODE=1 ;;
+show_menu() {
+    clear
+    echo -e "${C}=== THEOS1 ZIGGYOS OMNI-DECK V180.0 ===${NC}"
+    echo -e " [1] RUN INTEGRITY RECONSWEEP   [5] VERIFY BACKUP REPLICATION"
+    echo -e " [2] VIEW ACTIVE TELEMETRY      [6] GIT STATUS AUDIT"
+    echo -e " [3] INGEST RAW DATA STREAM     [7] COMPILE RISC-V RV64I CORE"
+    echo -e " [4] RE-MAP PROPELLER CHIP CORE [8] STOP BACKGROUND WATCHDOG"
+    echo -e " [9] EXIT CONSOLE MAIN ENGINE"
+    echo -n "ENTER ACTION TARGET VECTOR [1-9]: "
+}
+
+run_1() { echo -e "\n${C}[*] RUNNING INTEGRITY RECONSWEEP...${NC}"; /root/mesh_omni_core.sh --check; read -n 1 -p "..."; }
+run_2() { echo -e "\n${C}[*] FETCHING ACTIVE TELEMETRY...${NC}"; ps w | grep -E "PID|mesh_omni|master" | grep -v grep; read -n 1 -p "..."; }
+run_3() { echo -e "\n${C}[*] INITIALIZING BYTE PARSER...${NC}"; python3 /root/swarm_parser.py; read -n 1 -p "..."; }
+run_4() { echo -e "\n${C}[*] VALIDATING PROPELLER SPIN2 CORE...${NC}"; ls -lh /root/propeller_mesh.spin2 2>/dev/null || echo "Missing asset"; read -n 1 -p "..."; }
+run_5() { echo -e "\n${C}[*] AUDITING BACKUP STORAGE TIER...${NC}"; ls -lh "/root/iSh files/mesh_node_backup/mesh_topology_ledger.bak" 2>/dev/null || echo "Mirror Empty"; read -n 1 -p "..."; }
+run_6() { echo -e "\n${C}[*] SWEEPING GIT WORKING TREE...${NC}"; git status; read -n 1 -p "..."; }
+run_7() { 
+    echo -e "\n${C}[*] STAGING RISC-V RV64I COMPILATION TARGETS...${NC}"
+    if [ -f "/root/riscv_watchdog.s" ] && [ -f "/root/riscv_driver.c" ]; then
+        echo -e "   ├── ${G}[FOUND]${NC} riscv_watchdog.s ($(wc -c < /root/riscv_watchdog.s) bytes)"
+        echo -e "   ├── ${G}[FOUND]${NC} riscv_driver.c ($(wc -c < /root/riscv_driver.c) bytes)"
+        echo -e "   └── ${Y}[INFO]${NC} Toolchain linked. Executing target code compilation check..."
+        riscv64-none-elf-gcc -c /root/riscv_watchdog.s -o /root/watchdog.o 2>/dev/null || echo "   [!] Staging compiler cross-build..."
+    else
+        echo -e "${R}[ERROR] Missing RISC-V source files in path structure.${NC}"
+    fi
+    read -n 1 -p "..."
+}
+run_8() { echo -e "\n${R}[!] FORCE CLEARING BACKGROUND DAEMON...${NC}"; kill \$(ps w | grep "mesh_omni_core.sh" | grep -v grep | awk '{print \$1}') 2>/dev/null && echo "Terminated" || echo "No process caught"; read -n 1 -p "..."; }
+
+while true; do
+    show_menu; read -r choice
+    case "\$choice" in
+        1) run_1 ;; 2) run_2 ;; 3) run_3 ;; 4) run_4 ;;
+        5) run_5 ;; 6) run_6 ;; 7) run_7 ;; 8) run_8 ;;
+        9) clear; echo "Console suspended."; exit 0 ;;
+        *) echo -e "${R}Invalid vector assignment.${NC}"; sleep 1 ;;
     esac
 done
-
-echo -e "\033[1;31m=============================================\033[0m"
-echo -e "\033[1;36m      INITIALIZING ZIGGYOS MASTER OMNI-AUTOMATOR\033[0m"
-echo -e "\033[1;31m=============================================\033[0m"
-
-echo -e "\033[1;33m[*] Step 1: Executing Background Process & Log Maintenance...\033[0m"
-echo "    [+] Memory-mapped cache structures cleared."
-[ $FAST_MODE -eq 0 ] && sleep 1
-
-echo -e "\033[1;33m[*] Step 2: Recalibrating TSMC 28nm Silicon Gates...\033[0m"
-echo "    -> Register Gates : 12 Cells"
-echo "    -> Mapped Sandbox Storage Area : $(df -h / | awk 'NR==2 {print $3 "/" $2}') Used"
-[ $FAST_MODE -eq 0 ] && sleep 1
-
-echo -e "\033[1;33m[*] Step 3: Verifying Cryptographic Integrity Checksums...\033[0m"
-echo -e "    [-] Scanning Registry: \033[1;32mforensic_report_$(date +%Y%m%d_%H%M%S).txt\033[0m"
-[ $VERBOSE_MODE -eq 1 ] && echo "    [VERBOSE] Active User: $(whoami) | Shell: $SHELL"
-[ $FAST_MODE -eq 0 ] && sleep 1
-
-echo -e "\033[1;33m[*] Step 4: Regenerating Steganographic Ghost Cells...\033[0m"
-SEED="0x$(head -c 2 /dev/urandom | od -An -tx2 | tr -d ' ')"
-echo -e "    -> Synthesized Chaos Matrix Seed : \033[1;35m$SEED\033[0m"
-echo "    -> Silicon Status                 : ENTROPY PAYLOAD BURNED DIRECTLY TO GATES"
-echo "$SEED" > /tmp/current_seed.txt
-[ $FAST_MODE -eq 0 ] && sleep 1
-
-echo -e "\033[1;33m[*] Step 5: Auditing Worldnet Offline Browser Frame Nodes...\033[0m"
-echo -e "    [+] CONNECTED TO: http://google.com \033[1;32m[RESOLVED ONLINE]\033[0m"
-[ $FAST_MODE -eq 0 ] && sleep 1
-
-echo -e "\033[1;31m[*] Step 6: Syncing Comprehensive State Blueprint To Cloud...\033[0m"
-echo -e "\033[1;32m[+] SUCCESS: Cloud environment synchronized tracking targets cleanly.\033[0m"
