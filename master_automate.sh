@@ -14,7 +14,7 @@ while true; do
         1) /root/mesh_omni_core.sh --check; read -n 1 -p "..." ;;
         2) ps w | grep -E "PID|mesh_omni|master" | grep -v grep; read -n 1 -p "..." ;;
         3) python3 /root/swarm_parser.py; read -n 1 -p "..." ;;
-        4) riscv64-none-elf-gcc -c /root/riscv_watchdog.s -o /root/watchdog.o 2>/dev/null && echo "SUCCESS" || echo "Cached"; read -n 1 -p "..." ;;
+        4) riscv-none-elf-gcc -c /root/riscv_watchdog.s -o /root/watchdog.o 2>/dev/null && echo "SUCCESS" || echo "Cached"; read -n 1 -p "..." ;;
         5) cat /root/Dockerfile; read -n 1 -p "..." ;;
         6) exit 0 ;;
     esac
