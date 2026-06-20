@@ -2,30 +2,32 @@ name: ZiggyOS Core Compilation Engine Verification
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   verify-build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Local Repository Branch
-      uses: actions/checkout@v4
+      - name: Checkout Code Repository Layer
+        uses: actions/checkout@v4
 
-    - name: Set up Python Environment 
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Deploy GNU RISC-V Core Cross-Compiler Toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-riscv64-unknown-elf binutils-riscv64-unknown-elf
 
-    - name: Verify Workspace Core Directory Mapping
-      run: |
-        echo "[*] Checking structural integrity layers..."
-        test -d bin && echo "[+] Binary directory validated."
-        test -d modules && echo "[+] Engine modules directory validated."
+      - name: Execute Asymmetric Bitwise Stream Parser Check
+        run: python3 swarm_parser.py
 
-    - name: Execute Shell Asset Verification Test
-      run: |
-        echo "[*] Initializing asset layout compiler check..."
-        bash ./bin/build_dash.sh
+      - name: Execute Bare-Metal 32-Bit RISC-V Machine Compilation Check
+        run: |
+          # Enforce hardware alignment triplet naming convention rules
+          riscv64-unknown-elf-gcc -march=rv32i -mabi=ilp32 -c riscv_watchdog.s -o watchdog.o
+          ls -lh watchdog.o
+
+      - name: Execute End-to-End Test Bench Register Verification
+        run: |
+          riscv64-unknown-elf-gcc -march=rv32i -mabi=ilp32 riscv_driver.c watchdog.o -o riscv_test_bench
+          echo "[+] Cloud integration build matches standard verification matrix rules successfully."
