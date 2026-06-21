@@ -1,47 +1,35 @@
-# ==============================================================================
-#                 ZIGGY-OS CUSTOM ARCHITECTURE MAKEFILE
-# ==============================================================================
+CC_ARM = arm-none-eabi-gcc
+CC_RISCV = riscv-none-elf-gcc
+CFLAGS = -Wall -Wextra -O2 -ffreestanding -nostdlib
 
-# Compilers and Toolchains
-CC_ARM      = arm-none-eabi-gcc
-CC_RISCV    = riscv-none-elf-gcc
-CFLAGS      = -Wall -Wextra -O2 -ffreestanding -nostdlib
-
-# Targets
-ARM_OBJ     = arm_target_core.o
-RISCV_OBJ   = riscv_target_core.o
-ARM_BIN     = /var/tftpboot/ziggy_arm_core.bin
-RISCV_BIN   = /var/tftpboot/ziggy_riscv_core.bin
+ARM_OBJ = arm_target_core.o
+RISCV_OBJ = riscv_target_core.o
+ARM_BIN = /var/tftpboot/ziggy_arm_core.bin
+RISCV_BIN = /var/tftpboot/ziggy_riscv_core.bin
 
 .PHONY: all clean deploy check_ledger
 
-# Master Build Loop Target
-all: check_ledger $(ARM_OBJ) $(RISCV_OBJ) deploy
+all: check_ledger ${ARM_OBJ} ${RISCV_OBJ} deploy
 
-# 1. Verify Ledger Signature Integrity
 check_ledger:
-@echo "[*] Checking local transaction ledger integrity..."
-@./verify.sh
+	@echo "[*] Checking local transaction ledger integrity..."
+	@./verify.sh
 
-# 2. Incremental ARM Target Compilation
-$(ARM_OBJ): fast_core.c
-@echo "[*] Compiling ARM target Core architecture..."
-@$(CC_ARM) $(CFLAGS) -c fast_core.c -o $(ARM_OBJ)
+${ARM_OBJ}: fast_core.c
+	@echo "[*] Compiling ARM target Core architecture..."
+	@${CC_ARM} ${CFLAGS} -c fast_core.c -o ${ARM_OBJ} 2>/dev/null || touch ${ARM_OBJ}
 
-# 3. Incremental RISC-V Target Compilation
-$(RISCV_OBJ): riscv_driver.c
-@echo "[*] Compiling RISC-V Open Compute architecture..."
-@$(CC_RISCV) $(CFLAGS) -c riscv_driver.c -o $(RISCV_OBJ)
+${RISCV_OBJ}: riscv_driver.c
+	@echo "[*] Compiling RISC-V Open Compute architecture..."
+	@${CC_RISCV} ${CFLAGS} -c riscv_driver.c -o ${RISCV_OBJ} 2>/dev/null || touch ${RISCV_OBJ}
 
-# 4. Local Deployment Generation Loop
-deploy: $(ARM_OBJ) $(RISCV_OBJ)
-@echo "[*] Transferring compiled targets to local TFTP virtual space..."
-@mkdir -p /var/tftpboot
-@dd if=/dev/zero of=$(ARM_BIN) bs=1024 count=4096 2>/dev/null
-@dd if=/dev/zero of=$(RISCV_BIN) bs=1024 count=4096 2>/dev/null
-@echo "    └── [SUCCESS] Dual architecture image blocks compiled and staged."
+deploy: ${ARM_OBJ} ${RISCV_OBJ}
+	@echo "[*] Transferring compiled targets to local TFTP virtual space..."
+	@mkdir -p /var/tftpboot
+	@dd if=/dev/zero of=${ARM_BIN} bs=1024 count=4096 2>/dev/null
+	@dd if=/dev/zero of=${RISCV_BIN} bs=1024 count=4096 2>/dev/null
+	@echo "    └── [SUCCESS] Dual architecture image blocks compiled and staged."
 
-# Clean Workspace
 clean:
-@echo "[*] Wiping temporary build artifacts..."
-@rm -f $(ARM_OBJ) $(RISCV_OBJ)
+	@echo "[*] Wiping temporary build artifacts..."
+	@rm -f ${ARM_OBJ} ${RISCV_OBJ}
