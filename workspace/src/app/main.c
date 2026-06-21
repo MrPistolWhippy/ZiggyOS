@@ -1,1 +1,2 @@
-void kernel_main(){ putc("K"); }
+#include <ziggyos.h>
+void kernel_main(){ putc('K'); }

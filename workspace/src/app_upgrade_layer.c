@@ -1,3 +1,4 @@
+#include <ziggyos.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -6,8 +7,6 @@ extern volatile uint64_t system_jiffies_ticks;
 
 // --- Subsystem 1: Freestanding 1KB Kernel Bump Allocator (kmalloc) ---
 #define HEAP_SIZE 1024
-static uint8_t kernel_heap[HEAP_SIZE];
-static size_t heap_offset = 0;
 
 
 // --- Subsystem 2: High-Efficiency Telemetry Bitmask Compressor ---

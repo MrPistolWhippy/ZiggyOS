@@ -1,9 +1,9 @@
+*.img
+*.log
+*.tar.gz
 *.o
 *.bin
-*.elf
-*.iso
-isodir/
+.cache/
+.texlive2021/
+broadcom-wl-*/
 __pycache__/
-*.pyc
-.git-credentials
-.git-credentials

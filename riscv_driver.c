@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <stdint.h>
+// // // // // // #include <stdio.h>
+// // // #include <stdint.h>
 extern int verify_mesh_block(uint32_t *addr, uint32_t tok, uint32_t len);
 int main() {
     uint32_t led[4] = {0x8F4625B0, 0x2C26B46B, 0x4A123F85, 0};
