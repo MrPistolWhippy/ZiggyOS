@@ -11,7 +11,7 @@ typedef struct {
     uint32_t payload_len;
 } socket_frame_t;
 
-static inline void z_net_transmit_secure(socket_frame_t* frame, uint8_t* wire_out) {
+void z_net_transmit_secure(socket_frame_t* frame, uint8_t* wire_out) {
     // Encapsulate packet header layers
     wire_out[0] = (frame->src_port >> 8) & 0xFF;
     wire_out[1] = frame->src_port & 0xFF;

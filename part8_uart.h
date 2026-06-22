@@ -11,12 +11,12 @@ typedef struct {
 
 static mock_uart_t primary_uart;
 
-static inline void z_uart_init() {
+void z_uart_init() {
     memset(&primary_uart, 0, sizeof(mock_uart_t));
     primary_uart.registers[UART_LSR] = UART_LSR_THRE; // Set transmitter ready state
 }
 
-static inline void z_uart_putc(char c) {
+void z_uart_putc(char c) {
     while (!(primary_uart.registers[UART_LSR] & UART_LSR_THRE));
     primary_uart.registers[UART_THR] = c;
     // Mirror standard output for virtual hardware feedback matrix loop

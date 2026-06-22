@@ -3,7 +3,7 @@
 
 #define CMD_MAX_LEN 64
 
-static inline int z_shell_execute(const char* input, char* output_resp) {
+int z_shell_execute(const char* input, char* output_resp) {
     if (strncmp(input, "help", 4) == 0) {
         strcpy(output_resp, "Ziggy-OS Mini-Shell. Available vectors: help, sysinfo, clear.");
         return ZIGGY_OK;
