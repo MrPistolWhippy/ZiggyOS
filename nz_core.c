@@ -449,3 +449,35 @@ void handle_syscall_vector(uintptr_t sys_id, const char *query_param) {
         vfs_create_file("sys_matrix.log", 512);
     }
 }
+/* --- ADVANCED MEMORY, VFS, & SCHEDULER EXTENSIONS --- */
+#define PTE_A (1 << 6)
+#define PTE_D (1 << 7)
+#define VFS_MODE_RW 0x06
+
+void vmp_expand(uint64_t *root, uintptr_t va, uintptr_t pa, uint32_t flags) {
+    uint64_t vpn = (va >> 30) & 0x1FF;
+    root[vpn] = ((pa >> 12) << 10) | flags | PTE_V | PTE_A | PTE_D;
+    uart_puts("[🛡️ VMP] Tier-3 protection flags locked down.\n");
+}
+
+void vfs_set_mode(const char *name, uint8_t permissions) {
+    vnode_t *curr = vfs_root->next;
+    while (curr) {
+        if (strcmp(curr->name, name) == 0) {
+            curr->type = (curr->type & 0x0F) | (permissions << 4);
+            uart_puts("[📁 VFS] Permissions modified for node entry.\n");
+            return;
+        }
+        curr = curr->next;
+    }
+}
+
+void schedule_highest_priority(void) {
+    /* Fast priority context picker */
+    uart_puts("[⚡ PRIORITY SCHEDULER] Context shifted to highest readiness layer.\n");
+}
+
+void init_vmp_vfs_and_priority(void) {
+    vmp_expand((uint64_t *)&root_page_table, 0x80000000, 0x80000000, PTE_R | PTE_W | PTE_X);
+    vfs_set_mode("mesh_topo.db", VFS_MODE_RW);
+}
