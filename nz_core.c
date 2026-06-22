@@ -1968,3 +1968,35 @@ int hw_enqueue_event(uint32_t dev_id, uint32_t code) {
     printk("[⚡ HW EVENT] Asynchronous peripheral state signal queued.\n");
     return 0;
 }
+/* --- HACK2PORT AUTOMATED INTRUSION TRAP LAYER --- */
+#define H2P_PORT_1   22
+#define H2P_PORT_2   8080
+#define H2P_MAX_BANS 4
+
+typedef struct { uint32_t malicious_ip; uint8_t flag_dropped; } h2p_trap_t;
+static h2p_trap_t h2p_quarantine[H2P_MAX_BANS];
+static uint32_t h2p_ban_count = 0;
+
+int hack2port_intercept(uint32_t src_ip, uint16_t dest_port) {
+    /* 1. Check if the incoming IP is already locked inside our quarantine matrix */
+    for (uint32_t i = 0; i < h2p_ban_count; i++) {
+        if (h2p_quarantine[i].malicious_ip == src_ip) {
+            return -1; /* Immediate dropped frame pass */
+        }
+    }
+    
+    /* 2. Intercept unauthorized probing attempts across our 2 critical target ports */
+    if (dest_port == H2P_PORT_1 || dest_port == H2P_PORT_2) {
+        printk("[🚨 HACK2PORT] Intrusion intercepted! Port probe detected on target line: ");
+        uart_putc('0' + (dest_port / 1000)); printk("\n");
+        
+        if (h2p_ban_count < H2P_MAX_BANS) {
+            h2p_quarantine[h2p_ban_count].malicious_ip = src_ip;
+            h2p_quarantine[h2p_ban_count].flag_dropped = 1;
+            h2p_ban_count++;
+            printk("   └── [QUARANTINE] Source origin IP isolated and permanently blocked.\n");
+        }
+        return -1; /* Drop payload */
+    }
+    return 0; /* Authorized traffic block pass */
+}
