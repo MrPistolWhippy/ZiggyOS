@@ -1,0 +1,17 @@
+// Custom minimal bare-metal print stub for compilation resolution
+void print(const char *str) {
+    // In actual hardware, you would loop and write to a UART TX register here
+    while (*str) {
+        volatile char *uart_tx = (volatile char *)0x10000000; // Example MMIO UART address
+        *uart_tx = *str++;
+    }
+}
+#include <stdint.h>
+extern int verify_mesh_block(uint32_t *addr, uint32_t tok, uint32_t len);
+int main() {
+    uint32_t led[4] = {0x8F4625B0, 0x2C26B46B, 0x4A123F85, 0};
+    uint32_t tok = 0x8F4625B0 ^ 0x2C26B46B ^ 0x4A123F85;
+    printf("[*] DRIVER: Passing pointers to 32-bit RISC-V assembly matrix...\n");
+    printf(verify_mesh_block(led, tok, 4) ? "[PASS] REGISTERS MATCH\n" : "[FAIL] REGS DRIFT\n");
+    return 0;
+}
