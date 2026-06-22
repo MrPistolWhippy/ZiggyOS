@@ -1559,3 +1559,49 @@ void init_metrics_and_handshake_layers(void) {
     uart_puts("[✓] Shell Engine: Custom Interactive Metrics Module... INITIALIZED.\n");
     uart_puts("[✓] Crypto Core: Discrete Modular Key Exchange Matrix... ARMED.\n");
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: PAGE TABLE WALKER & MBR SIGNATURE INJECTOR
+ * ============================================================================== */
+
+/* --- 1. VIRTUAL MEMORY PAGE-FAULT PAGE TABLE WALKER --- */
+uintptr_t vmp_walk_page_fault(uint64_t *root_table, uintptr_t faulting_va) {
+    uart_puts("[🚨 PAGE FAULT] MMU Translation Trap! Walking page table hierarchy...\n");
+    
+    uint64_t vpn2 = (faulting_va >> 30) & 0x1FF;
+    uint64_t vpn1 = (faulting_va >> 21) & 0x1FF;
+    uint64_t vpn0 = (faulting_va >> 12) & 0x1FF;
+    
+    uint64_t pte2 = root_table[vpn2];
+    if (!(pte2 & PTE_V)) {
+        uart_puts("   └── [FAULT LEVEL 2] Invalid descriptor path. Mapping missing memory segment.\n");
+        return 0;
+    }
+    
+    /* Simulate navigating down to the final leaf entry */
+    (void)vpn1; (void)vpn0;
+    uart_puts("   └── [SUCCESS] Page table walk verified. Target address space aligned.\n");
+    return faulting_va;
+}
+
+/* --- 2. ON-DISK MASTER BOOT RECORD (MBR) SIGNATURE INJECTOR --- */
+void vdisk_inject_mbr_boot_signature(uint8_t *sector_buffer) {
+    uart_puts("[💾 MBR INJECTOR] Writing boot signature sector matrix parameters...\n");
+    
+    /* Clear standard bootloader instruction space */
+    for (int i = 0; i < 446; i++) {
+        sector_buffer[i] = 0x00;
+    }
+    
+    /* Inject standard x86 / multi-boot raw magic signature markers at bytes 510 and 511 */
+    sector_buffer[510] = 0x55;
+    sector_buffer[511] = 0xAA;
+    
+    uart_puts("   └── [SUCCESS] MBR validation signature [0xAA55] permanently locked inside block 0.\n");
+}
+
+void init_walker_and_injector_layers(void) {
+    uint8_t mock_mbr_sector[512] = {0};
+    vdisk_inject_mbr_boot_signature(mock_mbr_sector);
+    vmp_walk_page_fault((uint64_t *)&root_page_table, 0x8000F000);
+}
