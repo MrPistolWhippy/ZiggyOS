@@ -1144,3 +1144,75 @@ void init_tlb_and_autocomplete_subsystems(void) {
     tlb_flush_all();
     uart_puts("[✓] Userland Layer: Terminal Command Autocomplete Matrix... READY.\n");
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: DMA CONTROLLER & VFS NODE DIRECTORY SORTER
+ * ============================================================================== */
+
+#define DMA_BASE_ADDR   0x10022000
+#define DMA_REG_SRC     ((volatile uintptr_t*)(DMA_BASE_ADDR + 0x00))
+#define DMA_REG_DEST    ((volatile uintptr_t*)(DMA_BASE_ADDR + 0x04))
+#define DMA_REG_LEN     ((volatile size_t*)(DMA_BASE_ADDR + 0x08))
+#define DMA_REG_STATUS  ((volatile uint32_t*)(DMA_BASE_ADDR + 0x0C))
+
+/* --- 1. VIRTUAL DMA DIRECT MEMORY ACCESS CONTROLLER --- */
+void dma_transfer_block(uintptr_t src, uintptr_t dest, size_t len) {
+    uart_puts("[⚡ DMA CONTROLLER] Initiating high-speed channel byte copy...\n");
+    
+    /* Assign physical address boundaries directly to virtual controller registers */
+    *DMA_REG_SRC    = src;
+    *DMA_REG_DEST   = dest;
+    *DMA_REG_LEN    = len;
+    *DMA_REG_STATUS = 1; /* Fire the transfer trigger bit */
+    
+    /* Mimic hardware execution wait polling loops */
+    while (*DMA_REG_STATUS & 1);
+    
+    uart_puts("   └── [SUCCESS] DMA Transaction complete. CPU cycles preserved.\n");
+}
+
+/* --- 2. IN-KERNEL FILE SYSTEM DIRECTORY NODE SORTER MODULE --- */
+void vfs_sort_directory_nodes(void) {
+    if (!vfs_root || !vfs_root->next) return;
+    
+    uart_puts("[📁 VFS UTILITY] Sorting directory nodes alphabetically...\n");
+    int swapped_flag;
+    vnode_t *ptr1;
+    vnode_t *lptr = NULL;
+    
+    do {
+        swapped_flag = 0;
+        ptr1 = vfs_root->next;
+        
+        while (ptr1->next != lptr) {
+            /* If current string character byte ranks higher than the next entry node */
+            if (strcmp(ptr1->name, ptr1->next->name) > 0) {
+                /* Swap metadata block buffers manually inside the allocation pool */
+                char temp_name[VFS_MAX_NAME];
+                size_t temp_size = ptr1->size;
+                uint8_t *temp_data = ptr1->data_block_ptr;
+                uint8_t temp_type = ptr1->type;
+                
+                int i = 0; while(ptr1->name[i]) { temp_name[i] = ptr1->name[i]; i++; } temp_name[i] = '\0';
+                i = 0; while(ptr1->next->name[i]) { ptr1->name[i] = ptr1->next->name[i]; i++; } ptr1->name[i] = '\0';
+                i = 0; while(temp_name[i]) { ptr1->next->name[i] = temp_name[i]; i++; } ptr1->next->name[i] = '\0';
+                
+                ptr1->size = ptr1->next->size; ptr1->next->size = temp_size;
+                ptr1->data_block_ptr = ptr1->next->data_block_ptr; ptr1->next->data_block_ptr = temp_data;
+                ptr1->type = ptr1->next->type; ptr1->next->type = temp_type;
+                
+                swapped_flag = 1;
+            }
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+    } while (swapped_flag);
+    
+    uart_puts("   └── [SUCCESS] Directory node index map ordered cleanly.\n");
+}
+
+void init_dma_and_sorter_layers(void) {
+    uart_puts("[✓] Bus Topology: Virtual DMA Channel Bus... ONLINE.\n");
+    uart_puts("[✓] VFS Extension: Directory Alphabetical Sorter Layer... READY.\n");
+    vfs_sort_directory_nodes();
+}
