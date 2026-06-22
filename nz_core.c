@@ -1691,3 +1691,25 @@ void init_dns_and_firewall_subsystems(void) {
     uart_puts("[✓] Network Stack: Offline DNS Domain Mapping Router... ONLINE.\n");
     uart_puts("[✓] Bus Protection: Local Packet-Filtering Firewall... ARMED.\n");
 }
+
+/* ==============================================================================
+ *          ZIGGY-OS HIGH-CAPACITY SANDPIT CONSOLIDATION EXTENSION
+ * ============================================================================== */
+void run_sandpit_master_boot_sequence(void) {
+    init_user_alloc_vdisk_and_qday();
+    init_sandpit_environment_fabric();
+    init_socket_and_fat12_subsystems();
+    init_tlb_and_autocomplete_subsystems();
+    init_dma_and_sorter_layers();
+    init_fpu_and_ecc_layers();
+    init_parser_and_diagnostics_layers();
+    init_balancer_and_resolver_layers();
+    init_logger_and_async_subsystems();
+    init_metrics_and_handshake_layers();
+    init_walker_and_injector_layers();
+    init_dns_and_firewall_subsystems();
+    init_arp_and_reassembler_layers();
+    init_substitution_and_icmp_layers();
+    init_net_scheduler_and_printk_layers();
+    printk("[🚀 REBOOT] Sandpit Core Stack Integration Completed Successfully.\n");
+}
