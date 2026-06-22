@@ -2070,3 +2070,38 @@ int lifi_transmit_optical_stream(const uint8_t *payload, uint32_t len) {
     printk("   └── [SUCCESS] Light wave pulse burst stream emitted successfully.\n");
     return 0;
 }
+/* --- IR PULSE MODULATION LOOP & HARDWARE PWM DRIVER LAYER --- */
+#define IR_PWM_BASE_ADDR 0x10029000
+#define IR_REG_CONFIG    ((volatile uint32_t*)(IR_PWM_BASE_ADDR + 0x00))
+#define IR_REG_DUTY      ((volatile uint32_t*)(IR_PWM_BASE_ADDR + 0x04))
+
+typedef struct {
+    uint32_t carrier_frequency_hz; /* Locked to 38000 Hz standard IR baseline */
+    uint32_t pulse_duty_cycle_pct; 
+    uint8_t  modulation_active;
+} IrPwmDriver_t;
+
+static IrPwmDriver_t sys_ir_driver;
+
+void ir_init_pwm_layer(void) {
+    sys_ir_driver.carrier_frequency_hz = 38000;
+    sys_ir_driver.pulse_duty_cycle_pct = 50; /* Perfect square wave distribution */
+    sys_ir_driver.modulation_active = 0;
+    *IR_REG_CONFIG = 38000;
+    *IR_REG_DUTY   = 50;
+    printk("[✓] Peripheral Layer: GPIO IR Pulse Modulation Engine... ARMED.\n");
+}
+
+void ir_transmit_raw_pulse_burst(uint32_t mark_ticks, uint32_t space_ticks) {
+    sys_ir_driver.modulation_active = 1;
+    
+    /* Simulate continuous bit-banging square-wave oscillations across GPIO lines */
+    for (volatile uint32_t i = 0; i < mark_ticks; i++) {
+        *IR_REG_DUTY = 50; /* Turn on carrier wave pulse modulation */
+    }
+    for (volatile uint32_t i = 0; i < space_ticks; i++) {
+        *IR_REG_DUTY = 0;  /* Silence the line to create structural space padding */
+    }
+    
+    sys_ir_driver.modulation_active = 0;
+}
