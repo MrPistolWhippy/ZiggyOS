@@ -1279,3 +1279,146 @@ void init_fpu_and_ecc_layers(void) {
     test_memory_cell ^= 0x10; /* Inject a single bit flip corruption into memory */
     ecc_verify_and_correct_block(&test_memory_cell);
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: FRAMING PARSER & DIAGNOSTICS RING
+ * ============================================================================== */
+
+#define FRAME_STX 0x02
+#define FRAME_ETX 0x03
+#define DIAG_RING_SIZE 8
+
+/* --- 1. ABSTRACT SERIAL TRANSMISSION PROTOCOL FRAMING PARSER --- */
+typedef enum { STATE_IDLE, STATE_PAYLOAD } ParseState_t;
+static ParseState_t current_parser_state = STATE_IDLE;
+static uint8_t frame_payload_buffer[64];
+static uint32_t frame_payload_idx = 0;
+
+void protocol_parse_stream_byte(uint8_t input_byte) {
+    if (input_byte == FRAME_STX) {
+        current_parser_state = STATE_PAYLOAD;
+        frame_payload_idx = 0;
+        return;
+    }
+    if (input_byte == FRAME_ETX && current_parser_state == STATE_PAYLOAD) {
+        current_parser_state = STATE_IDLE;
+        frame_payload_buffer[frame_payload_idx] = '\0';
+        uart_puts("[📡 FRAMING PARSER] Validated bounded telemetry frame sequence.\n");
+        return;
+    }
+    if (current_parser_state == STATE_PAYLOAD && frame_payload_idx < 63) {
+        frame_payload_buffer[frame_payload_idx++] = input_byte;
+    }
+}
+
+/* --- 2. INTERNAL TASK LOOPBACK DIAGNOSTICS RING --- */
+typedef struct {
+    uint32_t timestamp_snapshot;
+    uint32_t utilization_metrics;
+    uint32_t active_thread_id;
+} DiagMetric_t;
+
+static DiagMetric_t diagnostics_ring_pool[DIAG_RING_SIZE];
+static uint32_t diag_ring_idx = 0;
+
+void diagnostics_log_system_metrics(uint32_t util_pct, uint32_t thread_id) {
+    diagnostics_ring_pool[diag_ring_idx].timestamp_snapshot = 0x17A2B4;
+    diagnostics_ring_pool[diag_ring_idx].utilization_metrics = util_pct;
+    diagnostics_ring_pool[diag_ring_idx].active_thread_id = thread_id;
+    
+    diag_ring_idx = (diag_ring_idx + 1) % DIAG_RING_SIZE;
+}
+
+void init_parser_and_diagnostics_layers(void) {
+    uart_puts("[✓] Bus Topology: Protocol Framing State Machine... DEPLOYED.\n");
+    uart_puts("[✓] Diagnostics: Internal Task Loopback Ring Tracker... ACTIVE.\n");
+    
+    /* Fire an initial diagnostics snapshot record to seed the telemetry map */
+    diagnostics_log_system_metrics(42, 0);
+}
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: PACKET LOAD BALANCER & INTERRUPT RESOLVER
+ * ============================================================================== */
+
+#define BALANCER_PORTS_MAX 4
+#define IRQ_PRIORITY_LEVELS 8
+
+/* --- 1. IN-KERNEL ROUND-ROBIN PACKET LOAD BALANCER --- */
+typedef struct {
+    uint32_t port_id;
+    uint32_t forwarded_packets_count;
+    uint8_t  is_active;
+} BalancerTarget_t;
+
+static BalancerTarget_t load_balancer_pool[BALANCER_PORTS_MAX];
+static uint32_t current_balancer_index = 0;
+
+void balancer_route_packet(const uint8_t *payload, uint32_t len) {
+    uint32_t checked_nodes = 0;
+    
+    while (checked_nodes < BALANCER_PORTS_MAX) {
+        uint32_t target_idx = (current_balancer_index + checked_nodes) % BALANCER_PORTS_MAX;
+        if (load_balancer_pool[target_idx].is_active) {
+            load_balancer_pool[target_idx].forwarded_packets_count++;
+            current_balancer_index = (target_idx + 1) % BALANCER_PORTS_MAX;
+            
+            uart_puts("[⚖️ LOAD BALANCER] Round-robin frame distributed to port ID: ");
+            uart_putc('0' + load_balancer_pool[target_idx].port_id);
+            uart_puts("\n");
+            return;
+        }
+        checked_nodes++;
+    }
+    uart_puts("[⚠️ BALANCER WARNING] No active destination target endpoints found.\n");
+}
+
+/* --- 2. CUSTOM HARDWARE INTERRUPT PRIORITY RESOLVER SCHEME --- */
+typedef struct {
+    uint8_t priority_ranking;
+    uint8_t interrupt_pending_flag;
+    void    (*interrupt_callback)(void);
+} IrqVector_t;
+
+static IrqVector_t interrupt_resolver_table[IRQ_PRIORITY_LEVELS];
+
+void irq_resolver_register_handler(uint32_t irq_id, uint8_t rank, void (*callback)(void)) {
+    if (irq_id < IRQ_PRIORITY_LEVELS) {
+        interrupt_resolver_table[irq_id].priority_ranking = rank;
+        interrupt_resolver_table[irq_id].interrupt_pending_flag = 0;
+        interrupt_resolver_table[irq_id].interrupt_callback = callback;
+    }
+}
+
+void irq_resolver_process_highest_priority(void) {
+    int highest_priority_target = -1;
+    uint8_t max_rank = 0;
+
+    /* Scan the interrupt table to discover the highest ranked active hardware trap */
+    for (int i = 0; i < IRQ_PRIORITY_LEVELS; i++) {
+        if (interrupt_resolver_table[i].interrupt_pending_flag) {
+            if (interrupt_resolver_table[i].priority_ranking > max_rank) {
+                max_rank = interrupt_resolver_table[i].priority_ranking;
+                highest_priority_target = i;
+            }
+        }
+    }
+
+    if (highest_priority_target != -1) {
+        interrupt_resolver_table[highest_priority_target].interrupt_pending_flag = 0;
+        uart_puts("[⚡ IRQ RESOLVER] Executing highest priority vector trap callback ring.\n");
+        if (interrupt_resolver_table[highest_priority_target].interrupt_callback) {
+            interrupt_resolver_table[highest_priority_target].interrupt_callback();
+        }
+    }
+}
+
+void init_balancer_and_resolver_layers(void) {
+    for (uint32_t i = 0; i < BALANCER_PORTS_MAX; i++) {
+        load_balancer_pool[i].port_id = i;
+        load_balancer_pool[i].forwarded_packets_count = 0;
+        load_balancer_pool[i].is_active = 1;
+    }
+    uart_puts("[✓] Network Stack: Round-Robin Packet Load Balancer... RUNNING.\n");
+    uart_puts("[✓] Interrupts: Hardware Priority Vector Resolver... INITIALIZED.\n");
+}
