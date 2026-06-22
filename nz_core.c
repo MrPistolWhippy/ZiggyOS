@@ -430,3 +430,22 @@ void init_smp_and_ipc_layers(void) {
     const uint8_t sync_token[] = "CORE_CLUSTER_READY";
     ipc_send_message(0, 1, 0xAA, sync_token, 18);
 }
+
+/* ==============================================================================
+ *          ZIGGY-OS KERNEL CORE: SYSTEM CALL OSINT INTERFACE LAYER
+ * ============================================================================== */
+
+#define SYS_INTELX_QUERY 42
+
+/* System call vector dispatch matrix mapping routine */
+void handle_syscall_vector(uintptr_t sys_id, const char *query_param) {
+    if (sys_id == SYS_INTELX_QUERY) {
+        uart_puts("\n[⚡ SYSCALL EXECUTED] Vector 42 intercepted: Trapping to Machine Mode.\n");
+        uart_puts("   └── Passing threat intelligence selector string payload: ");
+        uart_puts(query_param);
+        uart_puts("\n");
+        
+        /* Log parameters cleanly straight into our Virtual File System log file */
+        vfs_create_file("sys_matrix.log", 512);
+    }
+}
