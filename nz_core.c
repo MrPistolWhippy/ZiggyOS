@@ -1781,3 +1781,37 @@ void init_vlan_and_crash_tracker_layers(void) {
     uart_puts("[✓] Network Stack: VLAN IEEE 802.1Q Tagging Filter Matrix... ONLINE.\n");
     uart_puts("[✓] Diagnostics: On-Device Kernel Dump Crash Tracker....... ARMED.\n");
 }
+/* --- KEYRING & MULTI-CORE PI SPINLOCKS --- */
+#define K_MAX 4
+typedef struct { char name[16]; uint8_t enc[16]; uint32_t len; uint8_t active; } key_t;
+static key_t keyring[K_MAX];
+
+void keyring_save(const char *n, const uint8_t *s, uint32_t len) {
+    for (int i=0; i<K_MAX; i++) {
+        if (!keyring[i].active) {
+            int j=0; while(n[j]) { keyring[i].name[j]=n[j]; j++; }
+            for(uint32_t k=0; k<len; k++) keyring[i].enc[k] = s[k] ^ 0x7A;
+            keyring[i].active = 1;
+            printk("[✓] Keyring slot secured.\n"); return;
+        }
+    }
+}
+
+typedef struct { volatile uint32_t lock; uint32_t owner; uint32_t orig_pri; } pi_spin_t;
+
+void pi_spin_lock(pi_spin_t *l, uint32_t hid, uint32_t pri) {
+    uint32_t t = 1;
+    __asm__ volatile ("1: amoswap.w.aq %0, %1, (%2)" : "=r"(t) : "r"(t), "r"(&l->lock) : "memory");
+    if (t == 0) { l->owner = hid; l->orig_pri = pri; return; }
+    if (pri < priority_queue[l->owner].priority) {
+        priority_queue[l->owner].priority = pri;
+        printk("[⚡ SPIN] PI Boost forced.\n");
+    }
+    while (__atomic_load_n(&l->lock, __ATOMIC_RELAXED)) { __asm__ volatile("pause" ::: "memory"); }
+}
+
+void pi_spin_unlock(pi_spin_t *l) {
+    priority_queue[l->owner].priority = l->orig_pri;
+    __asm__ volatile ("amoswap.w.rl zero, zero, (%0)" :: "r"(&l->lock) : "memory");
+    printk("[✓] Spinlock released.\n");
+}
