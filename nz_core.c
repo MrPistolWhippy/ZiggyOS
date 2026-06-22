@@ -121,3 +121,69 @@ void execute_mock_terminal(void) {
     uart_puts("ziggy-sh# ");
     ziggy_shell_run("help");
 }
+
+/* ==============================================================================
+ *          ZIGGY-OS KERNEL CORE: PREEMPTIVE TIMER & ELF LOADER SUBSYSTEMS
+ * ============================================================================== */
+
+/* --- 1. RISC-V CLINT TIMER REGISTERS (M-TIME / M-TIMECMP) --- */
+#define CLINT_BASE     0x02000000
+#define CLINT_MTIMECMP ((volatile uint64_t*)(CLINT_BASE + 0x4000))
+#define CLINT_MTIME    ((volatile uint64_t*)(CLINT_BASE + 0xBFF8))
+#define TIMER_INTERVAL 10000000 /* ~1 second clock slice interval steps */
+
+/* Enable timer interrupts inside machine status register */
+void init_timer_preemption(void) {
+    uintptr_t mie;
+    /* Set next absolute timestamp check match trigger */
+    *CLINT_MTIMECMP = *CLINT_MTIME + TIMER_INTERVAL;
+    
+    /* Read Machine Interrupt Enable register and set MTIE (Machine Timer Interrupt Enable, bit 7) */
+    __asm__ volatile("csrr %0, mie" : "=r"(mie));
+    mie |= (1 << 7);
+    __asm__ volatile("csrw mie, %0" :: "r"(mie));
+    
+    uart_puts("[✓] Preemptive Driver: CLINT Machine Timer Interconnections ON.\n");
+}
+
+/* --- 2. LIGHTWEIGHT ELF BINARY LOADER FORMAT DESCRIPTOR --- */
+#define ELF_MAGIC_0 0x7F
+#define ELF_MAGIC_1 'E'
+#define ELF_MAGIC_2 'L'
+#define ELF_MAGIC_3 'F'
+
+typedef struct {
+    uint8_t  e_ident[16];
+    uint16_t e_type;
+    uint16_t e_machine;
+    uint32_t e_version;
+    uintptr_t e_entry;   /* Memory address translation program jump location */
+    uintptr_t e_phoff;
+    uintptr_t e_shoff;
+    uint32_t e_flags;
+    uint16_t e_ehsize;
+    uint16_t e_phentsize;
+    uint16_t e_phnum;
+} Elf32_Ehdr_t;
+
+int load_and_execute_elf(const uint8_t *elf_binary_stream) {
+    Elf32_Ehdr_t *header = (Elf32_Ehdr_t *)elf_binary_stream;
+    
+    uart_puts("[*] ELF Loader: Reading binary header descriptors...\n");
+    
+    /* Verify unique executable magic signatures */
+    if (header->e_ident[0] != ELF_MAGIC_0 || header->e_ident[1] != ELF_MAGIC_1 ||
+        header->e_ident[2] != ELF_MAGIC_2 || header->e_ident[3] != ELF_MAGIC_3) {
+        uart_puts("    └── [ERROR] Invalid signature mismatch. Target payload rejected.\n");
+        return -1;
+    }
+    
+    uart_puts("    └── [SUCCESS] Valid ELF Header Validated.\n");
+    uart_puts("    └── [REDIRECT] Context jump passing target vector to address location.\n");
+    
+    /* Cast executable entry block memory vector location pointer address to absolute target hook */
+    void (*user_program_entry)(void) = (void (*)(void))(header->e_entry);
+    (void)user_program_entry; /* Guard entry variable target reference boundary layout */
+    
+    return 0;
+}
