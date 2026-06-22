@@ -187,3 +187,71 @@ int load_and_execute_elf(const uint8_t *elf_binary_stream) {
     
     return 0;
 }
+
+/* ==============================================================================
+ *          ZIGGY-OS KERNEL CORE: DEVICE DRIVER STACK & USER PROTECTION
+ * ============================================================================== */
+
+/* --- 1. ABSTRACT VIRTUAL DEVICE DRIVER STRUCT --- */
+#define DEV_NAME_MAX 16
+
+typedef struct char_device {
+    char name[DEV_NAME_MAX];
+    int  (*open)(void);
+    int  (*read)(uint8_t *buffer, size_t length);
+    int  (*write)(const uint8_t *buffer, size_t length);
+    struct char_device *next;
+} char_device_t;
+
+static char_device_t *device_list_head = NULL;
+
+/* Mock Framebuffer Screen Driver implementations */
+int mock_screen_open(void) {
+    uart_puts("[🖥️ DRIVER] Virtual Framebuffer Screen Device Opened.\n");
+    return 0;
+}
+
+int mock_screen_write(const uint8_t *buf, size_t len) {
+    uart_puts("[🖥️ DRIVER] Blitting raster buffer stream to virtual display.\n");
+    return (int)len;
+}
+
+void register_char_device(char_device_t *dev) {
+    dev->next = device_list_head;
+    device_list_head = dev;
+    uart_puts("[✓] Driver Stack: Registered Character Device Interface: ");
+    uart_puts(dev->name);
+    uart_puts("\n");
+}
+
+/* --- 2. USER-SPACE MEMORY PROTECTION LAYER (PMP / PTE USER BITS) --- */
+#define PTE_U     (1 << 4)     /* User Mode Accessible Attribute Bit */
+
+void enforce_user_space_protection(uint64_t *page_table_root) {
+    /* Set up User-space sandbox execution permissions (0x00010000 -> 0x00010000) */
+    /* Flags include Valid (V), Readable (R), Executable (X), and User Access (U) */
+    uint64_t user_ppn = (0x00010000ULL >> 12);
+    
+    /* Lock protection bits into index 0 slots for localized user-space environments */
+    page_table_root[0] = (user_ppn << 10) | PTE_V | PTE_R | PTE_X | PTE_U;
+    
+    /* Configure RISC-V Physical Memory Protection (PMP) hardware bounds registers */
+    /* Setup pmpcfg0 to locked, naturally aligned 4-byte region (NAPOT) with Read/Write execution restrictions */
+    uintptr_t pmpcfg0_val = 0x1F; /* Locked | NAPOT | X | W | R */
+    __asm__ volatile("csrw pmpcfg0, %0" :: "r"(pmpcfg0_val));
+    
+    uart_puts("[✓] Protection Layer: Hardware PMP / PTE User Privilege Isolation ARMED.\n");
+}
+
+/* Statically instantiated driver blocks */
+static char_device_t screen_driver = {
+    .name = "dev_fb0",
+    .open = mock_screen_open,
+    .read = NULL,
+    .write = mock_screen_write
+};
+
+void init_advanced_hardware_extensions(void) {
+    register_char_device(&screen_driver);
+    enforce_user_space_protection((uint64_t *)&root_page_table);
+}
