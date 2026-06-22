@@ -1422,3 +1422,77 @@ void init_balancer_and_resolver_layers(void) {
     uart_puts("[✓] Network Stack: Round-Robin Packet Load Balancer... RUNNING.\n");
     uart_puts("[✓] Interrupts: Hardware Priority Vector Resolver... INITIALIZED.\n");
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: RING BUFFER LOGGER & ASYNC DEVICE NOTIFIER
+ * ============================================================================== */
+
+#define LOG_RING_SIZE 512
+#define ASYNC_DEV_MAX 4
+
+/* --- 1. EMBEDDED RING BUFFER CONSOLE LOGGER --- */
+typedef struct {
+    char     storage[LOG_RING_SIZE];
+    uint32_t head;
+    uint32_t tail;
+    mutex_t  log_mutex;
+} ConsoleLogRing_t;
+
+static ConsoleLogRing_t global_logger;
+
+void logger_write_string(const char *msg) {
+    mutex_lock(&global_logger.log_mutex);
+    while (*msg) {
+        uint32_t next_head = (global_logger.head + 1) % LOG_RING_SIZE;
+        if (next_head == global_logger.tail) {
+            break; /* Drop trailing chars on overflow buffer block constraints */
+        }
+        global_logger.storage[global_logger.head] = *msg++;
+        global_logger.head = next_head;
+    }
+    mutex_unlock(&global_logger.log_mutex);
+}
+
+/* --- 2. ASYNCHRONOUS DEVICE NOTIFICATION LOOP --- */
+typedef struct {
+    uint32_t device_id;
+    uint32_t status_flags;
+    void    (*async_handler)(uint32_t flags);
+} AsyncDevice_t;
+
+static AsyncDevice_t async_registry[ASYNC_DEV_MAX];
+static uint32_t async_device_count = 0;
+
+void async_device_register(uint32_t dev_id, void (*handler)(uint32_t)) {
+    if (async_device_count < ASYNC_DEV_MAX) {
+        async_registry[async_device_count].device_id = dev_id;
+        async_registry[async_device_count].status_flags = 0;
+        async_registry[async_device_count].async_handler = handler;
+        async_device_count++;
+    }
+}
+
+void async_device_poll_notifications(void) {
+    for (uint32_t i = 0; i < async_device_count; i++) {
+        if (async_registry[i].status_flags != 0) {
+            uart_puts("[⚡ ASYNC NOTIFIER] Non-blocking signal captured for device ID: ");
+            uart_putc('0' + async_registry[i].device_id);
+            uart_puts("\n");
+            
+            if (async_registry[i].async_handler) {
+                async_registry[i].async_handler(async_registry[i].status_flags);
+            }
+            async_registry[i].status_flags = 0; /* Clear signal line */
+        }
+    }
+}
+
+void init_logger_and_async_subsystems(void) {
+    global_logger.head = 0;
+    global_logger.tail = 0;
+    mutex_init(&global_logger.log_mutex);
+    
+    uart_puts("[✓] Diagnostic Layer: Ring Buffer Console Logger... RECORDING.\n");
+    uart_puts("[✓] Bus Topology: Asynchronous Device Notification Loop... READY.\n");
+    logger_write_string("ZIGGY_OS_RUNNING");
+}
