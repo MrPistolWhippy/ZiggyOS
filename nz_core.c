@@ -1605,3 +1605,89 @@ void init_walker_and_injector_layers(void) {
     vdisk_inject_mbr_boot_signature(mock_mbr_sector);
     vmp_walk_page_fault((uint64_t *)&root_page_table, 0x8000F000);
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: OFFLINE DNS RESOLVER & FIREWALL FILTER MODULE
+ * ============================================================================== */
+
+#define DNS_CACHE_MAX 4
+#define FW_RULES_MAX  4
+
+/* --- 1. OFFLINE DNS-STYLE NAME RESOLUTION CACHE MATRIX --- */
+typedef struct {
+    char     hostname[VFS_MAX_NAME];
+    uint32_t resolved_ip;
+    uint8_t  is_active;
+} DnsCacheEntry_t;
+
+static DnsCacheEntry_t offline_dns_table[DNS_CACHE_MAX];
+
+void dns_register_static_route(const char *name, uint32_t ip) {
+    for (int i = 0; i < DNS_CACHE_MAX; i++) {
+        if (!offline_dns_table[i].is_active) {
+            int j = 0; while (name[j] && j < VFS_MAX_NAME - 1) { offline_dns_table[i].hostname[j] = name[j]; j++; }
+            offline_dns_table[i].hostname[j] = '\0';
+            offline_dns_table[i].resolved_ip = ip;
+            offline_dns_table[i].is_active = 1;
+            uart_puts("[🌐 OFFLINE DNS] Registered local mapping target: ");
+            uart_puts(name);
+            uart_puts("\n");
+            return;
+        }
+    }
+}
+
+uint32_t dns_resolve_offline(const char *name) {
+    for (int i = 0; i < DNS_CACHE_MAX; i++) {
+        if (offline_dns_table[i].is_active && strcmp(offline_dns_table[i].hostname, name) == 0) {
+            return offline_dns_table[i].resolved_ip;
+        }
+    }
+    return 0; /* Unresolved local route */
+}
+
+/* --- 2. LOCAL PACKET-FILTERING FIREWALL MODULE --- */
+typedef struct {
+    uint16_t blocked_port;
+    uint8_t  action_drop; /* 1 = DROP, 0 = ALLOW */
+    uint8_t  is_enabled;
+} FwRule_t;
+
+static FwRule_t firewall_rules[FW_RULES_MAX];
+
+void firewall_add_rule(uint16_t port, uint8_t action) {
+    for (int i = 0; i < FW_RULES_MAX; i++) {
+        if (!firewall_rules[i].is_enabled) {
+            firewall_rules[i].blocked_port = port;
+            firewall_rules[i].action_drop = action;
+            firewall_rules[i].is_enabled = 1;
+            uart_puts("[🛡️ FIREWALL] Dynamic rule generated. Target Port: ");
+            uart_putc('0' + (port / 10)); /* Simple port range tracking flag */
+            uart_puts("\n");
+            return;
+        }
+    }
+}
+
+int firewall_inspect_packet(uint16_t dest_port) {
+    for (int i = 0; i < FW_RULES_MAX; i++) {
+        if (firewall_rules[i].is_enabled && firewall_rules[i].blocked_port == dest_port) {
+            if (firewall_rules[i].action_drop) {
+                uart_puts("[🚨 FW BLOCK] Intercepted unauthorized packet! Dropping payload drop frame.\n");
+                return -1; /* Drop frame packet operation */
+            }
+        }
+    }
+    return 0; /* Authorized traffic block pass */
+}
+
+void init_dns_and_firewall_subsystems(void) {
+    for (int i = 0; i < DNS_CACHE_MAX; i++) offline_dns_table[i].is_active = 0;
+    for (int i = 0; i < FW_RULES_MAX; i++) firewall_rules[i].is_enabled = 0;
+    
+    dns_register_static_route("ziggy.local", 0x12700001);
+    firewall_add_rule(443, 1); /* Mock drop incoming encrypted web connections on port 443 */
+    
+    uart_puts("[✓] Network Stack: Offline DNS Domain Mapping Router... ONLINE.\n");
+    uart_puts("[✓] Bus Protection: Local Packet-Filtering Firewall... ARMED.\n");
+}
