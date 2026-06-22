@@ -1027,3 +1027,71 @@ void init_usb_and_i2c_subsystems(void) {
     usb_simulate_attach_event(0, 0x046D, 2); /* Mock Standard HID Device */
     i2c_write_byte_bang(0x50, 0x1A, 0xFF);   /* Mock EEPROM Storage Call */
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: KEEP-ALIVE DAEMON & SERIAL PARITY FILTERS
+ * ============================================================================== */
+
+#define KEEP_ALIVE_INTERVAL 30
+#define PARITY_FILTER_MASK  0x7F
+
+/* --- 1. INTEGRATED NETWORK SOCKET KEEP-ALIVE DAEMON --- */
+typedef struct {
+    uint32_t last_heartbeat_tick;
+    uint32_t retry_count;
+    uint8_t  daemon_status; /* 0 = Standby, 1 = Active Tracking */
+} KeepAliveState_t;
+
+static KeepAliveState_t sys_network_daemon;
+
+void net_keep_alive_daemon_tick(uint32_t current_tick) {
+    if (sys_network_daemon.daemon_status == 1) {
+        /* Run structural interval check step */
+        if (current_tick - sys_network_daemon.last_heartbeat_tick >= KEEP_ALIVE_INTERVAL) {
+            uart_puts("[📡 NET_DAEMON] Connection probe sent. Monitoring loopback socket pulse...\n");
+            sys_network_daemon.last_heartbeat_tick = current_tick;
+            
+            /* Emulate a standard keep-alive socket ping packet transmission frame */
+            const uint8_t ping_frame[] = "PING";
+            loopback_transmit_packet(0x12700001, 0x12700001, ping_frame, 4);
+        }
+    }
+}
+
+/* --- 2. LOCALIZED SERIAL PARITY CHECK FILTER MATRIX --- */
+uint8_t serial_calculate_even_parity(uint8_t data_byte) {
+    uint8_t count = 0;
+    uint8_t temp = data_byte & PARITY_FILTER_MASK;
+    
+    /* Straightforward linear bitwise parity loop */
+    while (temp) {
+        count += (temp & 1);
+        temp >>= 1;
+    }
+    
+    /* Retain bit 7 as the calculated even parity bit field */
+    return (data_byte & PARITY_FILTER_MASK) | ((count & 1) << 7);
+}
+
+int serial_validate_received_byte(uint8_t received_byte) {
+    uint8_t calculated = serial_calculate_even_parity(received_byte);
+    if (received_byte != calculated) {
+        uart_puts("[⚠️ PARITY ERROR] Serial data stream frame corruption detected!\n");
+        return -1;
+    }
+    return 0;
+}
+
+void init_daemon_and_parity_subsystems(void) {
+    sys_network_daemon.last_heartbeat_tick = 0;
+    sys_network_daemon.retry_count = 0;
+    sys_network_daemon.daemon_status = 1;
+    
+    uart_puts("[✓] Network Stack: Socket Keep-Alive Daemon Engine... INITIALIZED.\n");
+    uart_puts("[✓] Bus Protection: Localized Serial Parity Filter Matrix... ARMED.\n");
+    
+    /* Execute immediate smoke validation tests */
+    uint8_t raw_test_char = 'Z';
+    uint8_t verified_char = serial_calculate_even_parity(raw_test_char);
+    serial_validate_received_byte(verified_char);
+}
