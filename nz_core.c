@@ -512,3 +512,60 @@ void init_vencdl_subsystem(void) {
         uart_puts("\n");
     }
 }
+
+/* ==============================================================================
+ *        ZIGGY-OS KERNEL CORE: OPEN VIRTUAL GPIO & DECENTRALIZED RING BUFFER
+ * ============================================================================== */
+
+/* --- 1. VIRTUAL GPIO HARDWARE CONTROLLER MAP --- */
+#define GPIO_BASE_ADDR 0x10012000
+#define GPIO_DIRECTION ((volatile uint32_t*)(GPIO_BASE_ADDR + 0x00))
+#define GPIO_DATA_VAL  ((volatile uint32_t*)(GPIO_BASE_ADDR + 0x04))
+
+void gpio_init_controller(void) {
+    /* Set bits 0-7 as output pins for hardware signaling lines */
+    *GPIO_DIRECTION = 0xFF;
+    /* Clear output data latch */
+    *GPIO_DATA_VAL = 0x00;
+    uart_puts("[✓] Open Hardware: Virtual GPIO Register Controller... ONLINE.\n");
+}
+
+void gpio_write_signal(uint32_t pin_mask, uint8_t high_low) {
+    if (high_low) {
+        *GPIO_DATA_VAL |= pin_mask;
+    } else {
+        *GPIO_DATA_VAL &= ~pin_mask;
+    }
+}
+
+/* --- 2. DECENTRALIZED LOCAL MEMORY RING BUFFER --- */
+#define RING_BUFFER_SIZE 256
+
+typedef struct {
+    uint8_t  buffer_pool[RING_BUFFER_SIZE];
+    uint32_t head_ptr;
+    uint32_t tail_ptr;
+    mutex_t  ring_mutex;
+} DecentralizedRing_t;
+
+static DecentralizedRing_t cluster_ring;
+
+void ring_init_pool(DecentralizedRing_t *ring) {
+    ring->head_ptr = 0;
+    ring->tail_ptr = 0;
+    mutex_init(&ring->ring_mutex);
+    uart_puts("[✓] Fabric Layer: Decentralized Memory Ring Buffer Allocator... ACTIVE.\n");
+}
+
+int ring_enqueue_block(DecentralizedRing_t *ring, uint8_t data_byte) {
+    mutex_lock(&ring->ring_mutex);
+    uint32_t next_head = (ring->head_ptr + 1) % RING_BUFFER_SIZE;
+    if (next_head == ring->tail_ptr) {
+        mutex_unlock(&ring->ring_mutex);
+        return -1; /* Buffer overflow guard */
+    }
+    ring->buffer_pool[ring->head_ptr] = data_byte;
+    ring->head_ptr = next_head;
+    mutex_unlock(&ring->ring_mutex);
+    return 0;
+}
