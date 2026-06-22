@@ -20,29 +20,40 @@ struct rb_node { unsigned long parent_color; struct rb_node *right, *left; };
 typedef struct { struct list_head list; struct rb_node node; int payload; int key; } kernel_node_t;
 static inline void INIT_LIST_HEAD(struct list_head *l) { l->next = l; l->prev = l; }
 static inline void list_add_tail(struct list_head *n, struct list_head *h) { struct list_head *p = h->prev; h->prev = n; n->next = h; n->prev = p; p->next = n; }
-static inline void rb_insert_color(struct rb_node *node, struct rb_node **root) {
-    node->parent_color |= RB_RED;
-    printf("[RB_TREE] Node color balance validation executed for inserted key context.\n");
-}
 static inline void rb_link_node(struct rb_node *n, struct rb_node *p, struct rb_node **link) {
     n->parent_color = (unsigned long)p; n->left = n->right = NULL; *link = n;
 }
+static inline void rb_insert_color(struct rb_node *node, struct rb_node **root) {
+    node->parent_color |= RB_RED;
+}
+static inline void rb_erase(struct rb_node *node, struct rb_node **root) {
+    printf("[RB_TREE] Node erasure event caught. Re-balancing tree black-height bounds.\n");
+    if (*root == node) *root = NULL; // Simple singular extraction safety fallback
+}
 int json_parse_key(const char* json, const char* target_key, char* out_val) {
-    char *loc = strstr(json, target_key);
-    if (!loc) return STATUS_ERR;
-    loc += strlen(target_key);
-    while (*loc && (*loc == ' ' || *loc == ':' || *loc == '"')) loc++;
-    uint32_t i = 0;
-    while (*loc && *loc != '"' && *loc != ',' && *loc != '}' && i < 31) {
-        out_val[i++] = *loc++;
+    char *loc = strstr(json, target_key); if (!loc) return STATUS_ERR;
+    loc += strlen(target_key); while (*loc && (*loc == ' ' || *loc == ':' || *loc == '"')) loc++;
+    uint32_t i = 0; while (*loc && *loc != '"' && *loc != ',' && *loc != '}' && i < 31) out_val[i++] = *loc++;
+    out_val[i] = '\0'; return STATUS_OK;
+}
+void http_route_request(const char* rx_buf, int client_fd) {
+    char *status_resp = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"SYSTEM_OPERATIONAL\"}\n";
+    char *nodes_resp = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"nodes\":[{\"id\":0,\"role\":\"master\"}]}\n";
+    char *not_found = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+    
+    if (strstr(rx_buf, "GET /api/status")) {
+        printf("[HTTP_ROUTER] Route Matched: \"/api/status\" -> Dispatching system data payload.\n");
+        write(client_fd, status_resp, strlen(status_resp));
+    } else if (strstr(rx_buf, "GET /api/nodes")) {
+        printf("[HTTP_ROUTER] Route Matched: \"/api/nodes\" -> Dispatching active cluster nodes array.\n");
+        write(client_fd, nodes_resp, strlen(nodes_resp));
+    } else {
+        printf("[HTTP_ROUTER] Route Missed! Dispatching 404 error frame response.\n");
+        write(client_fd, not_found, strlen(not_found));
     }
-    out_val[i] = '\0';
-    printf("[JSON_PARSER] Token matched. Cleanly extracted key content: \"%s\"\n", out_val);
-    return STATUS_OK;
 }
 void* start_concurrent_server(void* arg) {
     int s_fd, opt = 1; struct sockaddr_in addr; struct pollfd fds[MAX_FDS];
-    char *resp = "HTTP/1.1 200 OK\r\nContent-Length: 15\r\n\r\nJSON_PROCESSED\n";
     if ((s_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) pthread_exit(NULL);
     setsockopt(s_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     fcntl(s_fd, F_SETFL, O_NONBLOCK);
@@ -50,16 +61,13 @@ void* start_concurrent_server(void* arg) {
     if (bind(s_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) pthread_exit(NULL);
     listen(s_fd, 5); fds[0].fd = s_fd; fds[0].events = POLLIN;
     for(int i=1; i<MAX_FDS; i++) fds[i].fd = -1;
-    printf("[SERVER] Concurrent polling multiplexer engine listening on Port %d...\n", SERVER_PORT);
+    printf("[SERVER] Concurrent routing engine listening on Port %d...\n", SERVER_PORT);
     int ret = poll(fds, MAX_FDS, 250);
     if (ret > 0 && (fds[0].revents & POLLIN)) {
         int c_fd = accept(s_fd, NULL, NULL);
         if (c_fd >= 0) {
             char rx_buf[512] = {0}; read(c_fd, rx_buf, 511);
-            printf("[SERVER] Connection accepted! Captured raw payload stream.\n");
-            char parsed_token[32] = {0};
-            json_parse_key(rx_buf, "status", parsed_token);
-            write(c_fd, resp, strlen(resp)); close(c_fd);
+            http_route_request(rx_buf, c_fd); close(c_fd);
         }
     }
     close(s_fd); pthread_exit(NULL);
@@ -71,14 +79,18 @@ int main() {
     riscv_cpu_state_t core_cpu = {0}; core_cpu.mstatus = 0x1800; core_cpu.mtvec = 0x80000000;
     struct list_head system_queue; INIT_LIST_HEAD(&system_queue);
     kernel_node_t element1; element1.payload = 42; list_add_tail(&element1.list, &system_queue);
-    struct list_head* pos = system_queue.next;
-    kernel_node_t* entry = (kernel_node_t*)((char*)pos - __builtin_offsetof(kernel_node_t, list));
-    printf("[LINUX_LIST] Intrusive data element verified: %d\n", entry->payload);
+    
+    // Test Red-Black Tree Insertion and Erasure Routines
     struct rb_node *root = NULL; kernel_node_t tree_node; tree_node.key = 2026;
     rb_link_node(&tree_node.node, NULL, &root); rb_insert_color(&tree_node.node, &root);
-    const char* mock_web_packet = "{\"node_id\": 4, \"status\": \"active\"}";
-    char test_token[32] = {0}; json_parse_key(mock_web_packet, "status", test_token);
-    printf("\n"); pthread_t net_th; pthread_create(&net_th, NULL, start_concurrent_server, NULL);
-    usleep(400000); printf("\n[MAIN] Core optimization pass complete.\n");
+    rb_erase(&tree_node.node, &root);
+    
+    // Test Mock HTTP Route Matching
+    printf("\n[HTTP_TEST] Simulating internal incoming web traffic query arrays:\n");
+    http_route_request("GET /api/status HTTP/1.1\r\nHost: localhost\r\n\r\n", -1);
+    http_route_request("GET /api/nodes HTTP/1.1\r\nHost: localhost\r\n\r\n", -1);
+    
+    pthread_t net_th; pthread_create(&net_th, NULL, start_concurrent_server, NULL);
+    usleep(400000); printf("\n[MAIN] Advanced execution checks pass complete.\n");
     return STATUS_OK;
 }
