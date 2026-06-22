@@ -1844,3 +1844,127 @@ void pcap_mirror_frame(const uint8_t *payload, uint32_t len) {
     pcap_idx = (pcap_idx + 1) % PCAP_MAX;
     printk("[📸 PCAP] Packet frame mirrored to raw diagnostic dump log.\n");
 }
+/* --- VFS DEFRAG & ASYNC HARDWARE EVENT QUEUES --- */
+#define EVENT_QUEUE_MAX 4
+
+typedef struct { uint32_t block_id; uint8_t dirty; } vfs_idx_t;
+static vfs_idx_t vfs_index_map[4];
+
+void vfs_defrag_index_blocks(void) {
+    uint32_t packed_count = 0;
+    for (int i = 0; i < 4; i++) {
+        if (vfs_index_map[i].dirty) {
+            vfs_index_map[packed_count] = vfs_index_map[i];
+            if (packed_count != (uint32_t)i) vfs_index_map[i].dirty = 0;
+            packed_count++;
+        }
+    }
+    printk("[📁 VFS DEFRAG] Index blocks consolidated and aligned sequentially.\n");
+}
+
+typedef struct { uint32_t device_uid; uint32_t event_code; } hw_evt_t;
+static hw_evt_t hw_event_queue[EVENT_QUEUE_MAX];
+static uint32_t hw_evt_head = 0, hw_evt_tail = 0;
+
+int hw_enqueue_event(uint32_t dev_id, uint32_t code) {
+    uint32_t next = (hw_evt_head + 1) % EVENT_QUEUE_MAX;
+    if (next == hw_evt_tail) return -1; /* Queue choked */
+    hw_event_queue[hw_evt_head].device_uid = dev_id;
+    hw_event_queue[hw_evt_head].event_code = code;
+    hw_evt_head = next;
+    printk("[⚡ HW EVENT] Asynchronous peripheral state signal queued.\n");
+    return 0;
+}
+/* --- VFS DEFRAG & ASYNC HARDWARE EVENT QUEUES --- */
+#define EVENT_QUEUE_MAX 4
+
+typedef struct { uint32_t block_id; uint8_t dirty; } vfs_idx_t;
+static vfs_idx_t vfs_index_map[4];
+
+void vfs_defrag_index_blocks(void) {
+    uint32_t packed_count = 0;
+    for (int i = 0; i < 4; i++) {
+        if (vfs_index_map[i].dirty) {
+            vfs_index_map[packed_count] = vfs_index_map[i];
+            if (packed_count != (uint32_t)i) vfs_index_map[i].dirty = 0;
+            packed_count++;
+        }
+    }
+    printk("[📁 VFS DEFRAG] Index blocks consolidated and aligned sequentially.\n");
+}
+
+typedef struct { uint32_t device_uid; uint32_t event_code; } hw_evt_t;
+static hw_evt_t hw_event_queue[EVENT_QUEUE_MAX];
+static uint32_t hw_evt_head = 0, hw_evt_tail = 0;
+
+int hw_enqueue_event(uint32_t dev_id, uint32_t code) {
+    uint32_t next = (hw_evt_head + 1) % EVENT_QUEUE_MAX;
+    if (next == hw_evt_tail) return -1; /* Queue choked */
+    hw_event_queue[hw_evt_head].device_uid = dev_id;
+    hw_event_queue[hw_evt_head].event_code = code;
+    hw_evt_head = next;
+    printk("[⚡ HW EVENT] Asynchronous peripheral state signal queued.\n");
+    return 0;
+}
+/* --- VFS DEFRAG & ASYNC HARDWARE EVENT QUEUES --- */
+#define EVENT_QUEUE_MAX 4
+
+typedef struct { uint32_t block_id; uint8_t dirty; } vfs_idx_t;
+static vfs_idx_t vfs_index_map[4];
+
+void vfs_defrag_index_blocks(void) {
+    uint32_t packed_count = 0;
+    for (int i = 0; i < 4; i++) {
+        if (vfs_index_map[i].dirty) {
+            vfs_index_map[packed_count] = vfs_index_map[i];
+            if (packed_count != (uint32_t)i) vfs_index_map[i].dirty = 0;
+            packed_count++;
+        }
+    }
+    printk("[📁 VFS DEFRAG] Index blocks consolidated and aligned sequentially.\n");
+}
+
+typedef struct { uint32_t device_uid; uint32_t event_code; } hw_evt_t;
+static hw_evt_t hw_event_queue[EVENT_QUEUE_MAX];
+static uint32_t hw_evt_head = 0, hw_evt_tail = 0;
+
+int hw_enqueue_event(uint32_t dev_id, uint32_t code) {
+    uint32_t next = (hw_evt_head + 1) % EVENT_QUEUE_MAX;
+    if (next == hw_evt_tail) return -1; /* Queue choked */
+    hw_event_queue[hw_evt_head].device_uid = dev_id;
+    hw_event_queue[hw_evt_head].event_code = code;
+    hw_evt_head = next;
+    printk("[⚡ HW EVENT] Asynchronous peripheral state signal queued.\n");
+    return 0;
+}
+/* --- VFS DEFRAG & ASYNC HARDWARE EVENT QUEUES --- */
+#define EVENT_QUEUE_MAX 4
+
+typedef struct { uint32_t block_id; uint8_t dirty; } vfs_idx_t;
+static vfs_idx_t vfs_index_map[4];
+
+void vfs_defrag_index_blocks(void) {
+    uint32_t packed_count = 0;
+    for (int i = 0; i < 4; i++) {
+        if (vfs_index_map[i].dirty) {
+            vfs_index_map[packed_count] = vfs_index_map[i];
+            if (packed_count != (uint32_t)i) vfs_index_map[i].dirty = 0;
+            packed_count++;
+        }
+    }
+    printk("[📁 VFS DEFRAG] Index blocks consolidated and aligned sequentially.\n");
+}
+
+typedef struct { uint32_t device_uid; uint32_t event_code; } hw_evt_t;
+static hw_evt_t hw_event_queue[EVENT_QUEUE_MAX];
+static uint32_t hw_evt_head = 0, hw_evt_tail = 0;
+
+int hw_enqueue_event(uint32_t dev_id, uint32_t code) {
+    uint32_t next = (hw_evt_head + 1) % EVENT_QUEUE_MAX;
+    if (next == hw_evt_tail) return -1; /* Queue choked */
+    hw_event_queue[hw_evt_head].device_uid = dev_id;
+    hw_event_queue[hw_evt_head].event_code = code;
+    hw_evt_head = next;
+    printk("[⚡ HW EVENT] Asynchronous peripheral state signal queued.\n");
+    return 0;
+}
