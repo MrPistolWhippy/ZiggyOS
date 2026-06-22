@@ -1095,3 +1095,52 @@ void init_daemon_and_parity_subsystems(void) {
     uint8_t verified_char = serial_calculate_even_parity(raw_test_char);
     serial_validate_received_byte(verified_char);
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: TLB CACHING & INTERACTIVE AUTOCOMPLETE MATRIX
+ * ============================================================================== */
+
+#define TLB_SIZE 4
+#define AUTOCOMPLETE_MAX 3
+
+/* --- 1. VIRTUAL MEMORY PAGE TRANSLATION CACHING LAYER (TLB) --- */
+typedef struct {
+    uintptr_t virtual_page_num;
+    uintptr_t physical_page_num;
+    uint8_t   is_valid;
+} TLBEntry_t;
+
+static TLBEntry_t hardware_tlb[TLB_SIZE];
+
+void tlb_flush_all(void) {
+    for (int i = 0; i < TLB_SIZE; i++) {
+        hardware_tlb[i].is_valid = 0;
+    }
+    /* Trigger native assembly translation lookup buffer flush fencing instruction */
+    __asm__ volatile("sfence.vma zero, zero" ::: "memory");
+    uart_puts("[✓] Sandpit MMU: Translation Lookaside Buffer (TLB) Flushed.\n");
+}
+
+/* --- 2. INTEGRATED TERMINAL COMMAND AUTOCOMPLETE MATRIX --- */
+static const char *autocomplete_matrix[AUTOCOMPLETE_MAX] = {
+    "help",
+    "status",
+    "verify"
+};
+
+void shell_trigger_tab_autocomplete(const char *current_input_buffer) {
+    uart_puts("\n[💡 AUTOCOMPLETE MATCHES]:\n");
+    for (int i = 0; i < AUTOCOMPLETE_MAX; i++) {
+        /* Simple structural prefix verification match check */
+        if (autocomplete_matrix[i][0] == current_input_buffer[0]) {
+            uart_puts("  --> ");
+            uart_puts(autocomplete_matrix[i]);
+            uart_puts("\n");
+        }
+    }
+}
+
+void init_tlb_and_autocomplete_subsystems(void) {
+    tlb_flush_all();
+    uart_puts("[✓] Userland Layer: Terminal Command Autocomplete Matrix... READY.\n");
+}
