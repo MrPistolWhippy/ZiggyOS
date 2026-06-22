@@ -335,3 +335,98 @@ void init_networking_and_sync_layers(void) {
     const uint8_t boot_msg[] = "ZIGGY_OS_NET_OK";
     loopback_transmit_packet(0x12700001, 0x12700001, boot_msg, 15);
 }
+
+/* ==============================================================================
+ *          ZIGGY-OS KERNEL CORE: SMP MULTI-CORE BOOT & IPC PIPELINES
+ * ============================================================================== */
+
+#define MAX_CORES 4
+#define IPC_MSG_MAX 64
+
+/* --- 1. SYMMETRIC MULTIPROCESSING (SMP) MULTI-CORE REGISTRY --- */
+static mutex_t smp_boot_mutex;
+volatile uint32_t active_core_count = 1;
+
+/* Thread local storage tracking for individual hardwares */
+typedef struct {
+    uint32_t hart_id;
+    uint32_t state; /* 0=OFFLINE, 1=BOOTING, 2=ONLINE RUNNING */
+} CoreRegistry_t;
+
+static CoreRegistry_t cluster_cores[MAX_CORES];
+
+/* Hardware-level secondary core boot entry point called via boot.s */
+void smp_secondary_core_entry(uint32_t hart_id) {
+    /* Protect shared configuration entry tables using atomic mutex primitives */
+    mutex_lock(&smp_boot_mutex);
+    
+    if (hart_id < MAX_CORES) {
+        cluster_cores[hart_id].hart_id = hart_id;
+        cluster_cores[hart_id].state = 2; /* Mark Core Online */
+        active_core_count++;
+        
+        uart_puts("[🚀 MULTI-CORE] Core initialized safely. Joining kernel ring cluster.\n");
+    }
+    
+    mutex_unlock(&smp_boot_mutex);
+    
+    /* Drop secondary execution processing directly into local scheduler contexts */
+    while (1) {
+        schedule_next_context();
+        for (volatile int i = 0; i < 5000000; i++);
+    }
+}
+
+/* --- 2. EMBEDDED IPC MESSAGE PASSING PIPELINE --- */
+typedef struct {
+    uint32_t sender_core_id;
+    uint32_t dest_core_id;
+    uint32_t signal_vector_id;
+    uint8_t  payload[IPC_MSG_MAX];
+    uint32_t payload_len;
+} ipc_msg_t;
+
+/* RISC-V Core Local Interrupter (CLINT) IPI Register Map Base */
+#define CLINT_MSIP_BASE 0x02000000
+#define CLINT_MSIP(core_id) ((volatile uint32_t*)(CLINT_MSIP_BASE + (core_id * 4)))
+
+static mutex_t ipc_pipeline_mutex;
+static ipc_msg_t mailbox_pipeline[MAX_CORES];
+
+int ipc_send_message(uint32_t from_core, uint32_t to_core, uint32_t signal, const uint8_t *data, uint32_t len) {
+    if (to_core >= MAX_CORES || len > IPC_MSG_MAX) return -1;
+    
+    mutex_lock(&ipc_pipeline_mutex);
+    
+    uart_puts("[📬 IPC_PIPE] Packing secure inter-core transaction block payload.\n");
+    
+    mailbox_pipeline[to_core].sender_core_id = from_core;
+    mailbox_pipeline[to_core].dest_core_id = to_core;
+    mailbox_pipeline[to_core].signal_vector_id = signal;
+    mailbox_pipeline[to_core].payload_len = len;
+    
+    for (uint32_t i = 0; i < len; i++) {
+        mailbox_pipeline[to_core].payload[i] = data[i];
+    }
+    
+    uart_puts("   └── [INTERRUPT TRIGGERED] Dispatching IPI line to destination CPU cell.\n");
+    
+    /* Assert MSIP bit 0 to trigger an immediate hardware Inter-Processor Interrupt on target core */
+    *CLINT_MSIP(to_core) = 1;
+    
+    mutex_unlock(&ipc_pipeline_mutex);
+    return 0;
+}
+
+void init_smp_and_ipc_layers(void) {
+    mutex_init(&smp_boot_mutex);
+    mutex_init(&ipc_pipeline_mutex);
+    
+    /* Initialize base boot entry status maps for core 0 */
+    cluster_cores[0].hart_id = 0;
+    cluster_cores[0].state = 2;
+    
+    /* Run local inter-core signal pipe smoke test layout loop */
+    const uint8_t sync_token[] = "CORE_CLUSTER_READY";
+    ipc_send_message(0, 1, 0xAA, sync_token, 18);
+}
