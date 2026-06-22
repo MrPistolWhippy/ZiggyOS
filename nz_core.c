@@ -1815,3 +1815,32 @@ void pi_spin_unlock(pi_spin_t *l) {
     __asm__ volatile ("amoswap.w.rl zero, zero, (%0)" :: "r"(&l->lock) : "memory");
     printk("[✓] Spinlock released.\n");
 }
+/* --- TERMINAL MULTIPLEXER & IN-KERNEL PCAP DRIVERS --- */
+#define TMUX_WINS 2
+#define PCAP_MAX  4
+
+typedef struct { char buf[32]; uint32_t idx; } tmux_w_t;
+static tmux_w_t tmux_windows[TMUX_WINS];
+static uint32_t tmux_active = 0;
+
+void tmux_switch(uint32_t win_id) {
+    if (win_id < TMUX_WINS) {
+        tmux_active = win_id;
+        printk("[📟 TMUX] Context switched to Virtual Window ID: ");
+        uart_putc('0' + win_id); printk("\n");
+    }
+}
+
+typedef struct { uint32_t len; uint8_t data[64]; } pcap_pkt_t;
+static pcap_pkt_t pcap_ring[PCAP_MAX];
+static uint32_t pcap_idx = 0;
+
+void pcap_mirror_frame(const uint8_t *payload, uint32_t len) {
+    uint32_t idx = pcap_idx;
+    pcap_ring[idx].len = (len > 64) ? 64 : len;
+    for (uint32_t i = 0; i < pcap_ring[idx].len; i++) {
+        pcap_ring[idx].data[i] = payload[i];
+    }
+    pcap_idx = (pcap_idx + 1) % PCAP_MAX;
+    printk("[📸 PCAP] Packet frame mirrored to raw diagnostic dump log.\n");
+}
