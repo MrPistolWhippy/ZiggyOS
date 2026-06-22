@@ -1,9 +1,10 @@
 /* ==============================================================================
- *          ZIGGY-OS HARDWARE CORE: SCHEDULER & MMU LAYER VIRTUALIZATION
+ *          ZIGGY-OS ADVANCED MANAGEMENT STACK: VFS & HEAP ALLOCATOR
  * ============================================================================== */
 #include <stdint.h>
+#include <stddef.h>
 
-/* --- 1. CONSOLE UART DEFINITIONS --- */
+/* --- 1. MEMORY-MAPPED CONSOLE UART DEFINITIONS --- */
 #define UART_BASE 0x10000000
 #define UART_THR  ((volatile uint8_t*)(UART_BASE + 0))
 #define UART_LSR  ((volatile uint8_t*)(UART_BASE + 5))
@@ -15,49 +16,81 @@ void uart_puts(const char *s) {
     }
 }
 
-/* --- 2. SV39 MMU VIRTUAL MEMORY MAPPING REGISTERS --- */
-#define SATP_SV39 (8ULL  0x80000000) */
-    /* Mega-page mapping layout (Bit 10 contains physical page number) */
-    uint64_t ppn = (0x80000000ULL >> 12);
-    root_page_table[2] = (ppn << 10) | PTE_V | PTE_R | PTE_W | PTE_X;
-    
-    uart_puts("[✓] MMU Layer: Identity Mapped 1GB Base Segment.\n");
-}
+/* --- 2. DYNAMIC KERNEL HEAP ALLOCATOR (8-BYTE ALIGNED SLAB) --- */
+#define HEAP_SIZE (64 * 1024) /* 64KB Managed Kernel Heap Block */
+static uint8_t kernel_heap[HEAP_SIZE] __attribute__((aligned(8)));
+static size_t heap_top = 0;
 
-/* --- 3. RING-0 KERNEL TASK THREAD SCHEDULER --- */
-#define MAX_TASKS 4
-
-typedef struct {
-    uintptr_t sp;         /* Task execution stack pointer marker */
-    uint32_t  task_id;    /* Numerical profile reference identifier */
-    uint32_t  state;      /* 0 = SLEEP, 1 = RUNNABLE READY STATE */
-} TaskControlBlock_t;
-
-TaskControlBlock_t task_queue[MAX_TASKS];
-uint32_t current_task_index = 0;
-
-/* Basic task stack boundaries */
-uint8_t task_stacks[MAX_TASKS][2048] __attribute__((aligned(16)));
-
-void init_scheduler(void) {
-    for (uint32_t i = 0; i < MAX_TASKS; i++) {
-        task_queue[i].task_id = i;
-        task_queue[i].state = 1; /* Ready for dispatch round-robin cycles */
-        /* Set initial target execution frames inside isolated stack layouts */
-        task_queue[i].sp = (uintptr_t)&task_stacks[i][2048];
+void *kmalloc(size_t size) {
+    /* Align individual allocation sizing parameters to 8-byte boundary chunks */
+    size = (size + 7) & ~7;
+    if (heap_top + size > HEAP_SIZE) {
+        uart_puts("[⚠️ ALLOC ERROR] Kernel Heap Space Exhausted.\n");
+        return NULL;
     }
-    uart_puts("[✓] Ring-0 Scheduler: Context Management Engines Online.\n");
+    void *ptr = &kernel_heap[heap_top];
+    heap_top += size;
+    return ptr;
 }
 
-void schedule_next_context(void) {
-    uint32_t next_index = (current_task_index + 1) % MAX_TASKS;
+void kfree(void *ptr) {
+    /* Basic arena compaction stub layout */
+    (void)ptr;
+}
+
+/* --- 3. VIRTUAL FILE SYSTEM (VFS) FRAMEWORK LAYOUT --- */
+#define VFS_MAX_NAME 32
+#define VFS_TYPE_REG 1
+#define VFS_TYPE_DIR 2
+
+typedef struct vnode {
+    char     name[VFS_MAX_NAME];
+    uint8_t  type;
+    size_t   size;
+    uint8_t  *data_block_ptr;
+    struct vnode *next;
+} vnode_t;
+
+static vnode_t *vfs_root = NULL;
+
+void vfs_init(void) {
+    vfs_root = (vnode_t *)kmalloc(sizeof(vnode_t));
+    if (vfs_root) {
+        vfs_root->name[0] = '/';
+        vfs_root->name[1] = '\0';
+        vfs_root->type = VFS_TYPE_DIR;
+        vfs_root->size = 0;
+        vfs_root->data_block_ptr = NULL;
+        vfs_root->next = NULL;
+        uart_puts("[✓] VFS Subsystem: Root Virtual Mount Node Formatted.\n");
+    }
+}
+
+int vfs_create_file(const char *name, size_t initial_bytes) {
+    vnode_t *new_node = (vnode_t *)kmalloc(sizeof(vnode_t));
+    if (!new_node) return -1;
+
+    size_t i = 0;
+    while (i < VFS_MAX_NAME - 1 && name[i]) {
+        new_node->name[i] = name[i];
+        i++;
+    }
+    new_node->name[i] = '\0';
+    new_node->type = VFS_TYPE_REG;
+    new_node->size = initial_bytes;
+    new_node->data_block_ptr = (uint8_t *)kmalloc(initial_bytes);
     
-    /* Core context ring switcher hook */
-    current_task_index = next_index;
-    uart_puts("[🚀 ROUTINE] Context Shifted to Thread Identifier\n");
+    /* Chain into global lookup index tree */
+    new_node->next = vfs_root->next;
+    vfs_root->next = new_node;
+
+    uart_puts("[✓] VFS Subsystem: Virtual File Register Complete: ");
+    uart_puts(name);
+    uart_puts("\n");
+    return 0;
 }
 
-/* --- 4. EXECUTIVE BOOT INITIALIZATION SYSTEM --- */
+/* --- 4. SYSTEM INITIALIZATION ENTRY EXECUTIVE --- */
 void _start(void) {
     extern uint32_t __bss_start, __bss_end;
     uint32_t *bss = &__bss_start;
@@ -69,15 +102,11 @@ void _start(void) {
     uart_puts("\n   ZIGGY-OS KERNEL SUBSYSTEM RUNTIME INITIALISED   ");
     uart_puts("\n---------------------------------------------------\n");
 
-    /* Fire up hardware layout virtualization systems */
-    init_mmu_mappings();
-    init_scheduler();
+    /* Fire up heap dynamic tracking memory and mount root partitions */
+    vfs_init();
+    vfs_create_file("sys_matrix.log", 512);
+    vfs_create_file("mesh_topo.db", 1024);
 
-    uart_puts("\n[*] Boot Cycle Cleared. Invoking scheduler executive loop...\n");
-    
-    while (1) {
-        schedule_next_context();
-        /* Arbitrary pause cycle between round-robin task updates */
-        for (volatile int i = 0; i < 5000000; i++);
-    }
+    uart_puts("\n[*] Microkernel execution baseline running stably in memory loops.\n");
+    while (1);
 }
