@@ -893,3 +893,78 @@ void init_editor_and_defrag_layers(void) {
     uart_puts("[✓] Userland Layer: On-Device ASCII Terminal Text Editor... READY.\n");
     uart_puts("[✓] Memory Fabric: Atomic Memory Defragmenter Engine... ARMED.\n");
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: AUDIO WAVE DRIVER & PCI DISCOVERY BUS
+ * ============================================================================== */
+
+#define PCI_MAX_DEVICES 4
+#define AUDIO_REG_ADDR  0x10015000
+
+/* --- 1. EMULATED AUDIO WAVE DRIVER CHANNEL --- */
+typedef struct {
+    uint32_t frequency;
+    uint32_t volume;
+    uint8_t  wave_type; /* 0 = Square, 1 = Triangle */
+    uint8_t  is_playing;
+} AudioChannel_t;
+
+static AudioChannel_t sys_audio;
+
+void audio_set_tone(uint32_t freq, uint8_t type) {
+    sys_audio.frequency = freq;
+    sys_audio.wave_type = type;
+    sys_audio.is_playing = 1;
+    
+    volatile uint32_t *audio_hardware_reg = (volatile uint32_t *)AUDIO_REG_ADDR;
+    *audio_hardware_reg = freq | (type << 16) | (1 << 24);
+    
+    uart_puts("[🎵 AUDIO] Synthesizing software wave frequency: ");
+    if (type == 0) uart_puts("SQUARE_WAVE\n");
+    else uart_puts("TRIANGLE_WAVE\n");
+}
+
+/* --- 2. ABSTRACT PCI HARDWARE DISCOVERY BUS --- */
+typedef struct {
+    uint16_t vendor_id;
+    uint16_t device_id;
+    uint8_t  class_code;
+    uint8_t  bus_slot;
+} PciDevice_t;
+
+static PciDevice_t pci_bus[PCI_MAX_DEVICES];
+static uint32_t pci_count = 0;
+
+void pci_register_device(uint16_t vid, uint16_t did, uint8_t cls) {
+    if (pci_count < PCI_MAX_DEVICES) {
+        pci_bus[pci_count].vendor_id = vid;
+        pci_bus[pci_count].device_id = did;
+        pci_bus[pci_count].class_code = cls;
+        pci_bus[pci_count].bus_slot = pci_count;
+        pci_count++;
+    }
+}
+
+void pci_execute_discovery_bus_scan(void) {
+    uart_puts("[⚡ PCI BUS] Initiating hardware probing routine...\n");
+    for (uint32_t i = 0; i < pci_count; i++) {
+        uart_puts("   └── [DEVICE DETECTED] Slot ");
+        uart_putc('0' + pci_bus[i].bus_slot);
+        uart_puts(" | VID: ");
+        if (pci_bus[i].class_code == 0x03) uart_puts("Display Adapter\n");
+        else if (pci_bus[i].class_code == 0x02) uart_puts("Network Controller\n");
+        else uart_puts("Mass Storage\n");
+    }
+}
+
+void init_audio_and_pci_subsystems(void) {
+    pci_register_device(0x10EC, 0x8168, 0x02); /* Realtek Net Controller Mock */
+    pci_register_device(0x10DE, 0x1C22, 0x03); /* NVIDIA Display Mock */
+    
+    uart_puts("[✓] Hardware Layer: Audio Wave Driver Channel... RECONFIGURED.\n");
+    uart_puts("[✓] Bus Topology: Abstract PCI Discovery Stack... INITIALIZED.\n");
+    
+    /* Run boot diagnostics */
+    pci_execute_discovery_bus_scan();
+    audio_set_tone(440, 0); /* A4 Concert Pitch */
+}
