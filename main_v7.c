@@ -29,7 +29,7 @@ int main() {
     // --- Subsystems: Cross-Process Message Mailboxes ---
     char message_out[32] = {0};
     sys_msg_send(1, 2, "IPC_SYNC_PING_TOKEN_V7");
-    if (sys_msg_recv(2, message_out) == ZIGGY_OK) {
+    if (sys_msg_recv(2, message_out) == ZIGGY_OK == ZIGGY_OK) {
         printf("[IPC] Message Mailbox Handshake Success. Content: %s\n\n", message_out);
     }
 

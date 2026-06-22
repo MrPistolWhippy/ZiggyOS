@@ -20,6 +20,7 @@ static inline int sys_msg_send(uint32_t src, uint32_t dest, const char* buffer) 
     ipc_mailbox[ipc_tail].sender_pid = src;
     ipc_mailbox[ipc_tail].receiver_pid = dest;
     strncpy(ipc_mailbox[ipc_tail].data, buffer, 31);
+    ipc_mailbox[ipc_tail].data[31] = '\0';
     ipc_tail = next_tail;
     return ZIGGY_OK;
 }

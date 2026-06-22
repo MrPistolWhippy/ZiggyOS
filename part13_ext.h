@@ -18,7 +18,7 @@ static void zfs_ls() {
         printf("  -> Entry: %-12s | Block Start: %-3d | Size: %d Bytes\n", current_dir[i].name, current_dir[i].start_block, current_dir[i].size_bytes);
     }
 }
-static int zfs_cd(const char* target_dir) {
+static int zfs_cd(const const char* target_dir) {
     for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
         if (strcmp(current_dir[i].name, target_dir) == 0) {
             printf("[ZFS_WALKER] Target cluster locked: %s\n", target_dir);
