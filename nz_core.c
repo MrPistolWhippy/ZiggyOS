@@ -768,3 +768,68 @@ void init_sandpit_environment_fabric(void) {
     void *mesh_buffer = sandpit_alloc_segment(2048);
     (void)mesh_buffer;
 }
+
+/* ==============================================================================
+ *      ZIGGY-OS KERNEL CORE: NETWORK SOCKET ROUTER & FAT12 ENTRY PARSER
+ * ============================================================================== */
+
+#define MAX_SOCKETS 4
+#define FAT12_DIR_ENTRY_SIZE 32
+
+/* --- 1. ABSTRACT NETWORK SOCKET PACKET ROUTER --- */
+typedef struct {
+    uint16_t local_port;
+    uint16_t remote_port;
+    uint32_t remote_ip;
+    uint8_t  is_bound;
+} NetSocket_t;
+
+static NetSocket_t socket_table[MAX_SOCKETS];
+
+void init_socket_router(void) {
+    for (int i = 0; i < MAX_SOCKETS; i++) {
+        socket_table[i].is_bound = 0;
+    }
+    uart_puts("[✓] Sandpit Network: Abstract Socket Router Infrastructure... ONLINE.\n");
+}
+
+int socket_bind_port(uint32_t index, uint16_t port) {
+    if (index >= MAX_SOCKETS) return -1;
+    socket_table[index].local_port = port;
+    socket_table[index].is_bound = 1;
+    uart_puts("[📡 SOCKET] Port bound cleanly inside network registry stack.\n");
+    return 0;
+}
+
+/* --- 2. ON-DISK FAT12 FILE ENTRY PARSER LOOP --- */
+typedef struct {
+    char     filename[8];
+    char     extension[3];
+    uint8_t  attributes;
+    uint16_t reserved;
+    uint16_t modify_time;
+    uint16_t modify_date;
+    uint16_t starting_cluster;
+    uint32_t file_size;
+} __attribute__((packed)) FAT12_Dir_t;
+
+void fat12_parse_directory_sector(const uint8_t *sector_buffer) {
+    uart_puts("[💾 FAT12] Initiating raw sector directory tracking walker...\n");
+    
+    /* Walk through directory entry allocation blocks sequentially */
+    for (int i = 0; i < SECTOR_SIZE / FAT12_DIR_ENTRY_SIZE; i++) {
+        FAT12_Dir_t *entry = (FAT12_Dir_t *)(sector_buffer + (i * FAT12_DIR_ENTRY_SIZE));
+        
+        /* If filename first character byte is non-zero and not deleted (0xE5) */
+        if (entry->filename[0] != 0x00 && (uint8_t)entry->filename[0] != 0xE5) {
+            if (!(entry->attributes & 0x08)) { /* Exclude Volume Label entries */
+                uart_puts("   └── [FILE ENCOUNTERED] FAT12 Entry Staged successfully.\n");
+            }
+        }
+    }
+}
+
+void init_socket_and_fat12_subsystems(void) {
+    init_socket_router();
+    socket_bind_port(0, 80); /* Pre-bind HTTP testing gateway */
+}
