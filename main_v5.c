@@ -25,8 +25,8 @@ int main() {
     printf("[ZFS_MINI] Superblock token active: %s\n\n", vfs_disk_node.sector_data);
 
     // --- Subsystem: SLIP Internet Protocol ---
-    uint8_t mock_ip_packet = {0x45, 0x00, 0x00, 0xC0};
-    uint8_t slip_wire_buffer;
+    uint8_t mock_ip_packet[] = {0x45, 0x00, 0x00, 0xC0};
+    uint8_t slip_wire_buffer[32];
     uint32_t wire_len = z_slip_encapsulate(mock_ip_packet, 4, slip_wire_buffer);
     printf("[SLIP] Internet Frame boundary packet serialized: %d bytes\n\n", wire_len);
 
@@ -46,7 +46,7 @@ int main() {
 
     // --- Core Multi-Core Interlock Multi-Threading Loops ---
     scheduler_init();
-    pthread_t cores;
+    pthread_t cores[4];
     printf("[SMP] Launching hardware abstraction isolation layer workers...\n");
     for (uintptr_t i = 0; i < 4; i++) pthread_create(&cores[i], NULL, core_worker_v5, (void*)i);
     for (int i = 0; i < 4; i++) pthread_join(cores[i], NULL);
