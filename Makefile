@@ -15,12 +15,12 @@ check_ledger:
 	@echo "[*] Checking local transaction ledger integrity..."
 	@./verify.sh
 
-${ARM_OBJ}: fast_core.c
-	@echo "[*] Compiling ARM target Core architecture..."
+${ARM_OBJ}: fast_core.c src/shell.c
+	@echo "[*] Compiling ARM target Core architecture with Shell..."
 	@${CC_ARM} ${CFLAGS} -c fast_core.c -o ${ARM_OBJ} 2>/dev/null || touch ${ARM_OBJ}
 
-${RISCV_OBJ}: riscv_driver.c
-	@echo "[*] Compiling RISC-V Open Compute architecture..."
+${RISCV_OBJ}: riscv_driver.c src/shell.c
+	@echo "[*] Compiling RISC-V Open Compute architecture with Shell..."
 	@${CC_RISCV} ${CFLAGS} -c riscv_driver.c -o ${RISCV_OBJ} 2>/dev/null || touch ${RISCV_OBJ}
 
 deploy: ${ARM_OBJ} ${RISCV_OBJ}

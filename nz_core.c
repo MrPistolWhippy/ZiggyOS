@@ -110,3 +110,14 @@ void _start(void) {
     uart_puts("\n[*] Microkernel execution baseline running stably in memory loops.\n");
     while (1);
 }
+
+/* Explicit link to user-space command execution loop */
+extern void ziggy_shell_run(const char *cmd_buffer);
+
+void execute_mock_terminal(void) {
+    uart_puts("\nziggy-sh# ");
+    /* Simulate an automated user interactive call */
+    ziggy_shell_run("ls");
+    uart_puts("ziggy-sh# ");
+    ziggy_shell_run("help");
+}
