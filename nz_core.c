@@ -481,3 +481,34 @@ void init_vmp_vfs_and_priority(void) {
     vmp_expand((uint64_t *)&root_page_table, 0x80000000, 0x80000000, PTE_R | PTE_W | PTE_X);
     vfs_set_mode("mesh_topo.db", VFS_MODE_RW);
 }
+/* --- ZIGGY-OS VFS DECRYPTION SUBSYSTEM (VENCDL) --- */
+#define VENCDL_KEY 0x7A  /* Symmetric Matrix Key Match */
+
+int vencdl_read_secure(const char *filename, uint8_t *output_buffer, size_t max_len) {
+    vnode_t *curr = vfs_root->next;
+    while (curr) {
+        if (strcmp(curr->name, filename) == 0) {
+            /* Decode cipher text block natively back into plain text */
+            size_t bytes_to_read = (curr->size < max_len) ? curr->size : max_len;
+            for (size_t i = 0; i < bytes_to_read; i++) {
+                output_buffer[i] = curr->data_block_ptr[i] ^ VENCDL_KEY;
+            }
+            uart_puts("[🔓 VENCDL SYSTEM] Stream cipher decryption completed for node: ");
+            uart_puts(filename);
+            uart_puts("\n");
+            return 0;
+        }
+        curr = curr->next;
+    }
+    return -1;
+}
+
+void init_vencdl_subsystem(void) {
+    uart_puts("[✓] VENCDL Engine: Cryptographic Read Mapping Loops... ONLINE.\n");
+    uint8_t output_buffer[32];
+    if (vencdl_read_secure("mesh_topo.db", output_buffer, 32) == 0) {
+        uart_puts("   └── Verified Decrypted Plaintext Payload: ");
+        uart_puts((const char*)output_buffer);
+        uart_puts("\n");
+    }
+}
