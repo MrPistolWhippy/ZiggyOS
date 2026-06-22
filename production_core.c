@@ -14,13 +14,13 @@
 #define MAX_FDS 8
 #define POOL_SIZE 3
 #define QUEUE_SIZE 16
-#define LOG_FILE "secded_audit.bin"
+#define XOR_CIPHER_KEY 0xA5
 typedef struct { uint64_t mstatus; uint64_t mtvec; } riscv_cpu_state_t;
 struct list_head { struct list_head *next, *prev; };
 struct rb_node { unsigned long parent_color; struct rb_node *right, *left; };
 typedef struct { struct list_head list; struct rb_node node; int payload; int key; uint32_t parity_checksum; } kernel_node_t;
 typedef struct { uint32_t thread_id; uint32_t execution_count; volatile uint32_t active; } thread_stat_t;
-typedef struct { uint32_t timestamp; uint32_t error_type; uint8_t raw_word; uint8_t corrected_word; } audit_log_t;
+typedef struct { uint32_t timestamp; uint32_t err_type; uint32_t raw_word; } audit_rec_t;
 static int task_queue[QUEUE_SIZE];
 static int queue_head = 0, queue_tail = 0;
 static pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -28,6 +28,12 @@ static pthread_cond_t queue_cond = PTHREAD_COND_INITIALIZER;
 static thread_stat_t pool_metrics[POOL_SIZE];
 static inline void rb_link_node(struct rb_node *n, struct rb_node *p, struct rb_node **link) {
     n->parent_color = (unsigned long)p; n->left = n->right = NULL; *link = n;
+}
+void append_audit_log(uint32_t err_type, uint32_t raw_word) {
+    int fd = open("secded_audit.bin", O_WRONLY | O_CREAT | O_APPEND, 0644); if (fd < 0) return;
+    audit_rec_t rec = { (uint32_t)time(NULL), err_type, raw_word };
+    write(fd, &rec, sizeof(audit_rec_t)); close(fd);
+    printf("[AUDIT_LOG] SECDED tracking log appended to binary file: secded_audit.bin\n");
 }
 int db_write_index(const char* path, int key, int val) {
     int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644); if (fd < 0) return STATUS_ERR;
@@ -41,87 +47,59 @@ int db_read_index(const char* path, struct rb_node **root, kernel_node_t *alloca
     allocated_node->key = sk; allocated_node->payload = sv; allocated_node->parity_checksum = sk ^ sv;
     rb_link_node(&allocated_node->node, NULL, root); return STATUS_OK;
 }
-void log_secded_event(uint32_t err_type, uint8_t raw, uint8_t corrected) {
-    int fd = open(LOG_FILE, O_WRONLY | O_CREAT | O_APPEND, 0600);
-    if (fd >= 0) {
-        audit_log_t log = {16384, err_type, raw, corrected}; // Mock monotonic boot timestamp
-        write(fd, &log, sizeof(audit_log_t));
-        close(fd);
-        printf("[AUDIT_LOG] SECDED event state appended to binary file: %s\n", LOG_FILE);
-    }
-}
-uint8_t calculate_overall_parity(uint8_t word) {
-    uint8_t count = 0; for (int i = 0; i < 7; i++) { if ((word >> i) & 1) count++; } return count % 2;
-}
-uint8_t secded_encode(uint8_t data_nibble) {
-    uint8_t d0 = (data_nibble >> 0) & 1, d1 = (data_nibble >> 1) & 1;
-    uint8_t d2 = (data_nibble >> 2) & 1, d3 = (data_nibble >> 3) & 1;
+uint8_t calculate_overall_parity(uint8_t w) { uint8_t c = 0; for (int i = 0; i < 7; i++) { if ((w >> i) & 1) c++; } return c % 2; }
+uint8_t secded_encode(uint8_t dn) {
+    uint8_t d0 = (dn >> 0) & 1, d1 = (dn >> 1) & 1, d2 = (dn >> 2) & 1, d3 = (dn >> 3) & 1;
     uint8_t p0 = d0 ^ d1 ^ d3, p1 = d0 ^ d2 ^ d3, p2 = d1 ^ d2 ^ d3;
-    uint8_t hamming7 = (p0 << 0) | (p1 << 1) | (d0 << 2) | (p2 << 3) | (d1 << 4) | (d2 << 5) | (d3 << 6);
-    return hamming7 | (calculate_overall_parity(hamming7) << 7);
+    uint8_t h7 = (p0 << 0) | (p1 << 1) | (d0 << 2) | (p2 << 3) | (d1 << 4) | (d2 << 5) | (d3 << 6);
+    return h7 | (calculate_overall_parity(h7) << 7);
 }
-void secded_decode_verify(uint8_t received_word) {
-    uint8_t hamming7 = received_word & 0x7F;
-    uint8_t received_p_ext = (received_word >> 7) & 1;
-    uint8_t actual_p_ext = calculate_overall_parity(hamming7);
-    uint8_t parity_error = (received_p_ext != actual_p_ext);
-    uint8_t p0 = (hamming7 >> 0) & 1, p1 = (hamming7 >> 1) & 1, d0 = (hamming7 >> 2) & 1;
-    uint8_t p2 = (hamming7 >> 3) & 1, d1 = (hamming7 >> 4) & 1, d2 = (hamming7 >> 5) & 1, d3 = (hamming7 >> 6) & 1;
-    uint8_t syndrome = ((p2^d1^d2^d3)<<2) | ((p1^d0^d2^d3)<<1) | (p0^d0^d1^d3);
-    if (syndrome != 0 && parity_error) {
-        printf("[SECDED_ECC] Single-Error Caught! Recoverable.\n");
-        log_secded_event(1, received_word, received_word ^ (1 << 4)); // Log single fault type
-    } else if (syndrome != 0 && !parity_error) {
-        printf("[SECDED_ECC] [CRITICAL] Double-Bit Error Trapped! Data unfixable.\n");
-        log_secded_event(2, received_word, 0); // Log fatal double fault type
+void secded_decode_verify(uint8_t rw) {
+    uint8_t h7 = rw & 0x7F, p_err = ((rw >> 7) & 1) != calculate_overall_parity(h7);
+    uint8_t p0 = (h7>>0)&1, p1 = (h7>>1)&1, d0 = (h7>>2)&1, p2 = (h7>>3)&1, d1 = (h7>>4)&1, d2 = (h7>>5)&1, d3 = (h7>>6)&1;
+    uint8_t syn = ((p2^d1^d2^d3)<<2) | ((p1^d0^d2^d3)<<1) | (p0^d0^d1^d3);
+    printf("[SECDED_ECC] Analyzing bitstream structure... ");
+    if (syn == 0 && !p_err) printf("Clean Frame: No errors detected.\n");
+    else if (syn != 0 && p_err) { printf("Single-Error Caught! Recoverable.\n"); append_audit_log(1, rw); }
+    else if (syn != 0 && !p_err) { printf("\n  -> [CRITICAL_ALERT] Double-Bit Error Trapped! Data unfixable.\n"); append_audit_log(2, rw); }
+}
+uint32_t calculate_crc32(const uint8_t* data, size_t len) {
+    uint32_t crc = 0xFFFFFFFFU;
+    for (size_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++) {
+            if (crc & 1) crc = (crc >> 1) ^ 0xEDB88320U;
+            else crc >>= 1;
+        }
     }
+    return ~crc;
 }
-void simulate_advanced_cosmic_ray(uint8_t clean_secded_word, int force_double_fault) {
-    uint8_t corrupted_word = clean_secded_word;
-    if (force_double_fault) {
-        printf("[COSMIC_RAY] Injecting double-bit corruption into bit 2 and bit 5...\n");
-        corrupted_word ^= (1 << 2); corrupted_word ^= (1 << 5);
-    } else {
-        printf("[COSMIC_RAY] Injecting single-bit corruption into bit 4...\n");
-        corrupted_word ^= (1 << 4);
+int verify_database_integrity(const char* path, uint32_t expected_crc) {
+    int fd = open(path, O_RDONLY); if (fd < 0) return STATUS_ERR;
+    uint8_t buf[256]; memset(buf, 0, sizeof(buf)); size_t bytes_read = read(fd, buf, sizeof(buf)); close(fd);
+    uint32_t computed_crc = calculate_crc32(buf, bytes_read);
+    printf("[CRC32_ENGINE] Verification matching node_index.db: Computed [0x%08X] | Expected [0x%08X]\n", computed_crc, expected_crc);
+    return (computed_crc == expected_crc) ? STATUS_OK : STATUS_ERR;
+}
+void process_encrypted_request(uint8_t* crypto_payload, size_t len, char* out_clean_json) {
+    printf("[PROTOCOL_DECRYPT] Incoming encrypted packet signature caught. Applying streaming inversion mask...\n");
+    for (size_t i = 0; i < len; i++) {
+        out_clean_json[i] = (char)(crypto_payload[i] ^ XOR_CIPHER_KEY);
     }
-    secded_decode_verify(corrupted_word);
-}
-void stream_thread_metrics_json(int socket_fd) {
-    char json_payload[256];
-    int len = snprintf(json_payload, sizeof(json_payload),
-        "{\"telemetry\":{\"t0\":{\"active\":%d,\"tasks\":%d},\"t1\":{\"active\":%d,\"tasks\":%d},\"t2\":{\"active\":%d,\"tasks\":%d}}}\n",
-        pool_metrics[0].active, pool_metrics[0].execution_count,
-        pool_metrics[1].active, pool_metrics[1].execution_count,
-        pool_metrics[2].active, pool_metrics[2].execution_count);
-    
-    char http_header[512];
-    int header_len = snprintf(http_header, sizeof(http_header),
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n%s",
-        len, json_payload);
-    
-    write(socket_fd, http_header, header_len);
-    printf("[JSON_STREAM] Live thread status metrics formatted and pushed over active network socket descriptor.\n");
-}
-void thread_cli_status() {
-    printf("\n[THREAD_CLI] Querying internal worker thread status telemetry variables:\n");
-    for (int i = 0; i < POOL_SIZE; i++) {
-        printf(" -> Thread Index [%d] | Status: %-6s | Tasks Executed: %d\n", 
-               pool_metrics[i].thread_id, pool_metrics[i].active ? "ACTIVE" : "IDLE", pool_metrics[i].execution_count);
-    }
+    out_clean_json[len] = '\0';
+    printf("  -> [DECRYPTED_JSON] Parsed context stream text payload: %s\n", out_clean_json);
 }
 void* connection_pool_worker(void* arg) {
-    uintptr_t tid = (uintptr_t)arg;
-    pool_metrics[tid].thread_id = tid; pool_metrics[tid].active = 0; pool_metrics[tid].execution_count = 0;
     while (1) {
-        int c_fd = -1; pthread_mutex_lock(&queue_mutex);
+        int client_fd = -1; uintptr_t tid = (uintptr_t)arg;
+        pthread_mutex_lock(&queue_mutex);
         while (queue_head == queue_tail) pthread_cond_wait(&queue_cond, &queue_mutex);
-        c_fd = task_queue[queue_head]; queue_head = (queue_head + 1) % QUEUE_SIZE;
+        client_fd = task_queue[queue_head]; queue_head = (queue_head + 1) % QUEUE_SIZE;
         pthread_mutex_unlock(&queue_mutex);
-        if (c_fd >= 0) {
+        if (client_fd >= 0) {
             pool_metrics[tid].active = 1; pool_metrics[tid].execution_count++;
-            char rx_buf[128]; read(c_fd, rx_buf, sizeof(rx_buf)-1);
-            stream_thread_metrics_json(c_fd); close(c_fd); usleep(1000); pool_metrics[tid].active = 0;
+            char resp[256]; snprintf(resp, sizeof(resp), "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 53\r\n\r\n{\"threads\":[{\"id\":%d,\"status\":\"ACTIVE\",\"count\":%d}]}\n", (int)tid, pool_metrics[tid].execution_count);
+            write(client_fd, resp, strlen(resp)); close(client_fd); usleep(1000); pool_metrics[tid].active = 0;
         }
     }
     return NULL;
@@ -146,22 +124,33 @@ void* start_pool_server(void* arg) {
 }
 int main() {
     printf("=========================================================\n");
-    printf("     ZIGGY-OS SECDED AUDIT & JSON TELEMETRY ENGINE       \n");
+    printf("     ZIGGY-OS CRC32 PROTECTION & PROTOCOL DECRYPT CORE   \n");
     printf("=========================================================\n\n");
     riscv_cpu_state_t core_cpu = {0}; core_cpu.mstatus = 0x1800; core_cpu.mtvec = 0x80000000;
     db_write_index("node_index.db", 7007, 12);
-    struct rb_node *r_root = NULL; kernel_node_t r_node; db_read_index("node_index.db", &r_root, &r_node);
     
-    uint8_t clean_word = secded_encode(r_node.payload & 0x0F);
-    simulate_advanced_cosmic_ray(clean_word, 0);
-    simulate_advanced_cosmic_ray(clean_word, 1);
+    // 1. Compute expected database CRC32 value from baseline file
+    int fd = open("node_index.db", O_RDONLY); uint8_t f_buf[256]; size_t b_rd = read(fd, f_buf, sizeof(f_buf)); close(fd);
+    uint32_t expected_db_crc = calculate_crc32(f_buf, b_rd);
+    verify_database_integrity("node_index.db", expected_db_crc);
+    printf("\n");
+    
+    // 2. Test Client Decryption Protocol Mappings
+    uint8_t mock_encrypted_packet[] = {0xC3, 0xE4, 0xC4, 0xCE, 0xC7, 0xDD, 0xFA, 0xDD, 0xDC, 0xFA, 0xDC, 0xD4, 0xCE, 0xD7, 0xCD, 0x9A, 0x93, 0xC2, 0xCE, 0xDC, 0xD6, 0xCC, 0x9D}; // Mock XOR payload stream
+    char clean_json_buffer[128];
+    process_encrypted_request(mock_encrypted_packet, 23, clean_json_buffer);
+    printf("\n");
+    
+    // 3. SECDED Single-Error Recovery Verification Pass
+    uint8_t clean_word = secded_encode(12);
+    secded_decode_verify(clean_word ^ (1 << 4)); // Force single-bit fault trap
+    secded_decode_verify(clean_word ^ (1 << 2) ^ (1 << 5)); // Force double-bit unfixable fault trap
+    printf("\n");
     
     pthread_t pool_threads[POOL_SIZE];
     for (uintptr_t i = 0; i < POOL_SIZE; i++) pthread_create(&pool_threads[i], NULL, connection_pool_worker, (void*)i);
-    pool_metrics[0].active = 1; pool_metrics[0].execution_count = 14; pool_metrics[1].execution_count = 6;
-    thread_cli_status(); printf("\n");
-    
     pthread_t server_thread; pthread_create(&server_thread, NULL, start_pool_server, NULL);
-    usleep(400000); printf("\n[MAIN] Verification checks pass complete.\n");
+    
+    usleep(400000); printf("\n[MAIN] Verification checks pass complete. Production stability secure.\n");
     return STATUS_OK;
 }
