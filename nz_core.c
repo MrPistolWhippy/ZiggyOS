@@ -637,3 +637,35 @@ void init_router_and_hash_subsystems(void) {
     uint32_t check_hash = local_crypto_hash_compute(sample_data, 24);
     (void)check_hash;
 }
+/* --- KEYBOARD & PRIORITY INHERITANCE (PI) LOCKS --- */
+#define KBD_MAX 16
+static char kbd_buf[KBD_MAX];
+static uint32_t kb_h = 0, kb_t = 0;
+
+void kbd_irq(void) {
+    char c = *((volatile uint8_t*)(UART_BASE + 0));
+    uint32_t n = (kb_h + 1) % KBD_MAX;
+    if (n != kb_t) { kbd_buf[kb_h] = c; kb_h = n; uart_putc(c); }
+}
+
+typedef struct { mutex_t m; uint32_t owner; uint32_t orig_pri; uint8_t locked; } pi_lock_t;
+
+void pi_lock(pi_lock_t *p, uint32_t tid) {
+    if (!p->locked) {
+        mutex_lock(&p->m); p->owner = tid;
+        p->orig_pri = priority_queue[tid].priority; p->locked = 1;
+    } else {
+        uint32_t o = p->owner;
+        if (priority_queue[tid].priority < priority_queue[o].priority) {
+            priority_queue[o].priority = priority_queue[tid].priority;
+            uart_puts("[⚡ PI] Priority inversion prevented.\n");
+        }
+        mutex_lock(&p->m);
+    }
+}
+
+void pi_unlock(pi_lock_t *p) {
+    priority_queue[p->owner].priority = p->orig_pri;
+    p->locked = 0; mutex_unlock(&p->m);
+    uart_puts("[✓] PI] Lock released.\n");
+}
